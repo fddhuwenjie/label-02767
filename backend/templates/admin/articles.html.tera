@@ -143,19 +143,19 @@
 {% block scripts %}
 <script>
 async function deleteArticle(id) {
-    if (!confirm('确定要删除这篇文章吗？此操作不可恢复。')) return;
-    
-    try {
-        const res = await fetch(`/xuadmin/articles/${id}`, { method: 'DELETE' });
-        const result = await res.json();
-        if (result.success) {
-            window.location.reload();
-        } else {
-            alert(result.message);
+    showConfirm('确定要删除这篇文章吗？此操作不可恢复。', async () => {
+        try {
+            const res = await fetch(`/xuadmin/articles/${id}`, { method: 'DELETE' });
+            const result = await res.json();
+            if (result.success) {
+                window.location.reload();
+            } else {
+                showError(result.message);
+            }
+        } catch (err) {
+            showError('删除失败，请稍后重试');
         }
-    } catch (err) {
-        alert('删除失败，请稍后重试');
-    }
+    });
 }
 </script>
 {% endblock %}

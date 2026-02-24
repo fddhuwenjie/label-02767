@@ -131,22 +131,23 @@ document.getElementById('add-form').addEventListener('submit', async (e) => {
         });
         const result = await res.json();
         if (result.success) window.location.reload();
-        else alert(result.message);
+        else showError(result.message);
     } catch (err) {
-        alert('创建失败');
+        showError('创建失败');
     }
 });
 
 async function deleteCategory(id) {
-    if (!confirm('确定要删除这个分类吗？删除后相关文章的分类将被清空。')) return;
-    try {
-        const res = await fetch(`/xuadmin/categories/${id}`, { method: 'DELETE' });
-        const result = await res.json();
-        if (result.success) window.location.reload();
-        else alert(result.message);
-    } catch (err) {
-        alert('删除失败');
-    }
+    showConfirm('确定要删除这个分类吗？删除后相关文章的分类将被清空。', async () => {
+        try {
+            const res = await fetch(`/xuadmin/categories/${id}`, { method: 'DELETE' });
+            const result = await res.json();
+            if (result.success) window.location.reload();
+            else showError(result.message);
+        } catch (err) {
+            showError('删除失败');
+        }
+    });
 }
 </script>
 {% endblock %}

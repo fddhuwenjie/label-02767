@@ -47,6 +47,22 @@
             color: #8b5cf6;
             font-weight: 600;
         }
+        /* 自定义下拉框样式 */
+        select.custom-select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+        /* 模态框动画 */
+        .modal-overlay { transition: opacity 0.2s ease; }
+        .modal-content { transition: transform 0.2s ease, opacity 0.2s ease; }
+        .modal-overlay.hidden { opacity: 0; pointer-events: none; }
+        .modal-overlay.hidden .modal-content { transform: scale(0.95); opacity: 0; }
     </style>
     {% block head %}{% endblock %}
 </head>
@@ -164,6 +180,18 @@
         </main>
     </div>
 
+    <!-- 全局模态框 -->
+    <div id="global-modal" class="modal-overlay hidden fixed inset-0 bg-black/50 flex items-center justify-center z-[100]" onclick="if(event.target===this)closeModal()">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+            <div class="p-6">
+                <div id="modal-icon" class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"></div>
+                <h3 id="modal-title" class="text-xl font-bold text-gray-900 text-center mb-2"></h3>
+                <p id="modal-message" class="text-gray-500 text-center"></p>
+            </div>
+            <div id="modal-buttons" class="flex border-t border-gray-100"></div>
+        </div>
+    </div>
+
     <script>
     function toggleSidebar() {
         document.querySelector('.sidebar').classList.toggle('open');
@@ -179,6 +207,69 @@
             }
         });
     });
+    
+    // 全局模态框函数
+    function showModal(options) {
+        const modal = document.getElementById('global-modal');
+        const icon = document.getElementById('modal-icon');
+        const title = document.getElementById('modal-title');
+        const message = document.getElementById('modal-message');
+        const buttons = document.getElementById('modal-buttons');
+        
+        const iconType = options.type || 'info';
+        const iconConfig = {
+            success: { bg: 'bg-emerald-100', color: 'text-emerald-600', svg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>' },
+            error: { bg: 'bg-red-100', color: 'text-red-600', svg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>' },
+            warning: { bg: 'bg-amber-100', color: 'text-amber-600', svg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>' },
+            info: { bg: 'bg-violet-100', color: 'text-violet-600', svg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>' },
+            confirm: { bg: 'bg-red-100', color: 'text-red-600', svg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>' }
+        };
+        const cfg = iconConfig[iconType];
+        icon.className = `w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 ${cfg.bg}`;
+        icon.innerHTML = `<svg class="w-7 h-7 ${cfg.color}" fill="none" stroke="currentColor" viewBox="0 0 24 24">${cfg.svg}</svg>`;
+        
+        title.textContent = options.title || '';
+        message.textContent = options.message || '';
+        
+        buttons.innerHTML = '';
+        if (options.showCancel) {
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'flex-1 py-4 text-gray-600 font-medium hover:bg-gray-50 transition-colors';
+            cancelBtn.textContent = options.cancelText || '取消';
+            cancelBtn.onclick = () => { closeModal(); if(options.onCancel) options.onCancel(); };
+            buttons.appendChild(cancelBtn);
+        }
+        const confirmBtn = document.createElement('button');
+        const btnClass = options.type === 'confirm' ? 'text-red-600 hover:bg-red-50' : 'text-violet-600 hover:bg-violet-50';
+        confirmBtn.className = options.showCancel 
+            ? `flex-1 py-4 ${btnClass} font-semibold transition-colors border-l border-gray-100`
+            : `flex-1 py-4 ${btnClass} font-semibold transition-colors`;
+        confirmBtn.textContent = options.confirmText || '确定';
+        confirmBtn.onclick = () => { closeModal(); if(options.onConfirm) options.onConfirm(); };
+        buttons.appendChild(confirmBtn);
+        
+        modal.classList.remove('hidden');
+    }
+    
+    function closeModal() {
+        document.getElementById('global-modal').classList.add('hidden');
+    }
+    
+    function showAlert(message, title = '提示', type = 'info') {
+        showModal({ type, title, message });
+    }
+    
+    function showSuccess(message, title = '成功') {
+        showModal({ type: 'success', title, message });
+    }
+    
+    function showError(message, title = '错误') {
+        showModal({ type: 'error', title, message });
+    }
+    
+    function showConfirm(message, onConfirm, title = '确认删除', confirmText = '删除') {
+        showModal({ type: 'confirm', title, message, showCancel: true, confirmText, onConfirm });
+    }
     </script>
     {% block scripts %}{% endblock %}
 </body>

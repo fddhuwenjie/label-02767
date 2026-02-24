@@ -148,9 +148,9 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
         });
         const result = await res.json();
         if (result.success) window.location.reload();
-        else alert(result.message);
+        else showError(result.message);
     } catch (err) {
-        alert('更新失败');
+        showError('更新失败');
     }
 });
 </script>

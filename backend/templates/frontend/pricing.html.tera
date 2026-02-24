@@ -222,10 +222,10 @@ async function createOrder(membershipType) {
             document.getElementById('order-amount').textContent = '¥' + result.data.amount;
             document.getElementById('pay-modal').classList.remove('hidden');
         } else {
-            alert(result.message);
+            showError(result.message);
         }
     } catch (err) {
-        alert('创建订单失败');
+        showError('创建订单失败');
     }
 }
 
@@ -249,12 +249,12 @@ async function payOrder(method) {
             document.getElementById('pay-modal').classList.add('hidden');
             document.getElementById('success-modal').classList.remove('hidden');
         } else {
-            alert(result.message);
+            showError(result.message);
             btn.disabled = false;
             btn.innerHTML = method === 'alipay' ? '支付宝支付（模拟）' : '微信支付（模拟）';
         }
     } catch (err) {
-        alert('支付失败');
+        showError('支付失败');
         btn.disabled = false;
         btn.innerHTML = method === 'alipay' ? '支付宝支付（模拟）' : '微信支付（模拟）';
     }
