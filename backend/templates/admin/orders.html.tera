@@ -1,0 +1,154 @@
+{% extends "admin/base" %}
+
+{% block title %}订单管理 - 后台管理{% endblock %}
+{% block page_title %}订单管理{% endblock %}
+
+{% block content %}
+<!-- 统计卡片 -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-gray-900">{{ paid_count | default(value=0) }}</p>
+                <p class="text-sm text-gray-500">已支付</p>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-gray-900">{{ pending_count | default(value=0) }}</p>
+                <p class="text-sm text-gray-500">待支付</p>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-gray-900">{{ cancelled_count | default(value=0) }}</p>
+                <p class="text-sm text-gray-500">已取消</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 订单列表 -->
+<div class="bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-100/50 overflow-hidden">
+    {% if orders | length > 0 %}
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">订单信息</th>
+                    <th class="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">会员类型</th>
+                    <th class="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">金额</th>
+                    <th class="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">支付方式</th>
+                    <th class="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                    <th class="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for order in orders %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div>
+                            <p class="font-mono text-sm text-gray-900">{{ order.id | truncate(length=12) }}...</p>
+                            <p class="text-xs text-gray-500 mt-0.5">用户: {{ order.user_id | truncate(length=8) }}...</p>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center
+                                {% if order.membership_type == 'monthly' %}bg-blue-100{% elif order.membership_type == 'quarterly' %}bg-emerald-100{% elif order.membership_type == 'yearly' %}bg-amber-100{% else %}bg-violet-100{% endif %}">
+                                <svg class="w-4 h-4 {% if order.membership_type == 'monthly' %}text-blue-600{% elif order.membership_type == 'quarterly' %}text-emerald-600{% elif order.membership_type == 'yearly' %}text-amber-600{% else %}text-violet-600{% endif %}" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                            </div>
+                            <span class="font-medium text-gray-900">
+                                {% if order.membership_type == "monthly" %}月度会员
+                                {% elif order.membership_type == "quarterly" %}季度会员
+                                {% elif order.membership_type == "yearly" %}年度会员
+                                {% elif order.membership_type == "permanent" %}永久会员
+                                {% endif %}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-lg font-bold text-gray-900">¥{{ order.amount }}</span>
+                    </td>
+                    <td class="px-6 py-4 text-gray-500">
+                        {{ order.payment_method | default(value="--") }}
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if order.status == "paid" %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                            已支付
+                        </span>
+                        {% elif order.status == "pending" %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 text-sm font-medium rounded-full">
+                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                            待支付
+                        </span>
+                        {% elif order.status == "cancelled" %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
+                            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                            已取消
+                        </span>
+                        {% elif order.status == "refunded" %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-red-100 text-red-700 text-sm font-medium rounded-full">
+                            <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                            已退款
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-gray-500 text-sm">
+                        {{ order.created_at | date(format="%Y-%m-%d %H:%M") }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if total_pages > 1 %}
+    <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+        <p class="text-sm text-gray-500">共 {{ total_pages }} 页</p>
+        <div class="flex items-center gap-2">
+            {% if current_page > 1 %}
+            <a href="/xuadmin/orders?page={{ current_page - 1 }}" class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">上一页</a>
+            {% endif %}
+            <span class="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg">{{ current_page }}</span>
+            {% if current_page < total_pages %}
+            <a href="/xuadmin/orders?page={{ current_page + 1 }}" class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">下一页</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="py-16 text-center">
+        <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+        </div>
+        <p class="text-gray-500">暂无订单数据</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "frontend/base" %}
+
+{% block title %}全部资源 - 资源库{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-6 lg:px-8 py-12">
+    <!-- 页面标题 -->
+    <div class="mb-10">
+        <h1 class="text-3xl font-bold text-slate-900 mb-2">全部资源</h1>
+        <p class="text-slate-500">浏览我们精心整理的优质资源库</p>
+    </div>
+
+    <!-- 分类筛选 -->
+    <div class="mb-8">
+        <div class="flex items-center gap-3 overflow-x-auto pb-2">
+            <a href="/articles" class="flex-shrink-0 px-5 py-2.5 {% if not current_category %}bg-slate-900 text-white{% else %}bg-white text-slate-700 border border-slate-200 hover:border-violet-300 hover:text-violet-600{% endif %} text-sm font-medium rounded-full transition-all">
+                全部
+            </a>
+            {% for cat in categories %}
+            <a href="/articles?category={{ cat.id }}" class="flex-shrink-0 px-5 py-2.5 {% if current_category == cat.id %}bg-slate-900 text-white{% else %}bg-white text-slate-700 border border-slate-200 hover:border-violet-300 hover:text-violet-600{% endif %} text-sm font-medium rounded-full transition-all">
+                {{ cat.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 文章列表 -->
+    {% if articles | length > 0 %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {% for article in articles %}
+        <a href="/article/{{ article.id }}" class="group bg-white rounded-2xl overflow-hidden border border-slate-200/60 card-hover">
+            <div class="aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 relative overflow-hidden">
+                {% if article.cover_image %}
+                <img src="{{ article.cover_image }}" alt="{{ article.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                {% else %}
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="w-14 h-14 bg-gradient-to-br from-violet-500/80 to-purple-600/80 rounded-xl flex items-center justify-center">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                </div>
+                {% endif %}
+                {% if article.is_featured %}
+                <div class="absolute top-3 right-3">
+                    <span class="px-2.5 py-1 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-xs font-semibold rounded-full">推荐</span>
+                </div>
+                {% endif %}
+            </div>
+            <div class="p-5">
+                <h3 class="font-semibold text-slate-900 group-hover:text-violet-600 transition-colors line-clamp-2 mb-2">{{ article.title }}</h3>
+                <p class="text-sm text-slate-500 line-clamp-2 mb-4">{{ article.content | truncate(length=60) }}</p>
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span>{{ article.created_at | date(format="%Y-%m-%d") }}</span>
+                    <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        {{ article.view_count }}
+                    </span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- 分页 -->
+    {% if total_pages > 1 %}
+    <div class="mt-12 flex justify-center items-center gap-2">
+        {% if current_page > 1 %}
+        <a href="/articles?page={{ current_page - 1 }}{% if current_category %}&category={{ current_category }}{% endif %}" 
+           class="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-full hover:border-violet-300 hover:text-violet-600 transition-all">
+            上一页
+        </a>
+        {% endif %}
+        
+        <span class="px-5 py-2.5 text-sm text-slate-500">{{ current_page }} / {{ total_pages }}</span>
+        
+        {% if current_page < total_pages %}
+        <a href="/articles?page={{ current_page + 1 }}{% if current_category %}&category={{ current_category }}{% endif %}" 
+           class="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-full hover:border-violet-300 hover:text-violet-600 transition-all">
+            下一页
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center py-20 bg-white rounded-2xl border border-slate-200/60">
+        <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+            </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-900 mb-2">暂无资源</h3>
+        <p class="text-slate-500">该分类下暂无资源，请查看其他分类</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

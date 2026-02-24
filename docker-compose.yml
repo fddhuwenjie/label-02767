@@ -1,0 +1,45 @@
+services:
+  db:
+    image: mariadb:10.11
+    container_name: rocket-mariadb
+    platform: linux/amd64
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: rocket_db
+      MYSQL_USER: rocket
+      MYSQL_PASSWORD: rocketpassword
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    ports:
+      - "3310:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rocket-backend
+    environment:
+      DATABASE_URL: mysql://rocket:rocketpassword@db:3306/rocket_db
+      SECRET_KEY: FHzyazF6WGNNhpzKc9odMH7N6OerouVwzOKDk7vEJBE=
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
+      RUST_LOG: info
+      ROCKET_ADDRESS: 0.0.0.0
+      ROCKET_PORT: 8000
+      ROCKET_SECRET_KEY: FHzyazF6WGNNhpzKc9odMH7N6OerouVwzOKDk7vEJBE=
+    ports:
+      - "8090:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mariadb_data:

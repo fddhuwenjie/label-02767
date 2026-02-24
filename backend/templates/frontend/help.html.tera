@@ -1,0 +1,130 @@
+{% extends "frontend/base" %}
+
+{% block title %}使用指南 - 资源库{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-6 lg:px-8 py-16">
+    <!-- 页面标题 -->
+    <div class="text-center mb-16">
+        <div class="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-violet-500/30">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+        </div>
+        <h1 class="text-3xl font-bold text-slate-900 mb-4">使用指南</h1>
+        <p class="text-lg text-slate-500">快速了解如何使用资源库获取您需要的资源</p>
+    </div>
+
+    <!-- 步骤指南 -->
+    <div class="space-y-8">
+        <!-- 步骤1 -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-8">
+            <div class="flex items-start gap-6">
+                <div class="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span class="text-xl font-bold text-violet-600">1</span>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">注册账号</h3>
+                    <p class="text-slate-600 mb-4">首先，您需要注册一个账号才能使用完整功能。点击右上角的"注册"按钮，填写用户名、邮箱和密码即可完成注册。</p>
+                    <div class="bg-slate-50 rounded-xl p-4">
+                        <p class="text-sm text-slate-500">
+                            <svg class="w-4 h-4 inline-block mr-1 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            注意：请使用真实有效的邮箱地址，系统会验证邮箱域名的有效性。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 步骤2 -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-8">
+            <div class="flex items-start gap-6">
+                <div class="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span class="text-xl font-bold text-violet-600">2</span>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">浏览资源</h3>
+                    <p class="text-slate-600 mb-4">注册登录后，您可以浏览平台上的所有资源。通过首页的分类导航或搜索功能，快速找到您需要的资源。</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-slate-50 rounded-xl p-4">
+                            <h4 class="font-medium text-slate-900 mb-2">分类浏览</h4>
+                            <p class="text-sm text-slate-500">按设计素材、开发教程、办公模板等分类查找</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-xl p-4">
+                            <h4 class="font-medium text-slate-900 mb-2">搜索功能</h4>
+                            <p class="text-sm text-slate-500">输入关键词快速搜索相关资源</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 步骤3 -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-8">
+            <div class="flex items-start gap-6">
+                <div class="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span class="text-xl font-bold text-violet-600">3</span>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">购买会员</h3>
+                    <p class="text-slate-600 mb-4">要查看资源的下载链接，您需要购买会员。我们提供多种会员套餐供您选择：</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-blue-50 rounded-xl p-4 text-center">
+                            <p class="font-medium text-blue-700">月度会员</p>
+                            <p class="text-sm text-blue-500">30天有效</p>
+                        </div>
+                        <div class="bg-emerald-50 rounded-xl p-4 text-center">
+                            <p class="font-medium text-emerald-700">季度会员</p>
+                            <p class="text-sm text-emerald-500">90天有效</p>
+                        </div>
+                        <div class="bg-amber-50 rounded-xl p-4 text-center">
+                            <p class="font-medium text-amber-700">年度会员</p>
+                            <p class="text-sm text-amber-500">365天有效</p>
+                        </div>
+                        <div class="bg-violet-50 rounded-xl p-4 text-center">
+                            <p class="font-medium text-violet-700">永久会员</p>
+                            <p class="text-sm text-violet-500">终身有效</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 步骤4 -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-8">
+            <div class="flex items-start gap-6">
+                <div class="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span class="text-xl font-bold text-violet-600">4</span>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">下载资源</h3>
+                    <p class="text-slate-600 mb-4">成为会员后，您可以在资源详情页看到下载链接和提取密码。点击链接跳转到对应网盘，输入提取密码即可下载。</p>
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                        <p class="text-sm text-emerald-700">
+                            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            会员期间可无限次下载所有资源，无任何限制！
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部链接 -->
+    <div class="mt-12 text-center">
+        <p class="text-slate-500 mb-4">还有其他问题？</p>
+        <div class="flex justify-center gap-4">
+            <a href="/faq" class="px-6 py-3 bg-slate-100 text-slate-700 font-medium rounded-full hover:bg-slate-200 transition-colors">
+                查看常见问题
+            </a>
+            <a href="/contact" class="px-6 py-3 bg-violet-600 text-white font-medium rounded-full hover:bg-violet-700 transition-colors">
+                联系我们
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

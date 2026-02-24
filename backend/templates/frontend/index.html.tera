@@ -1,0 +1,199 @@
+{% extends "frontend/base" %}
+
+{% block title %}首页 - 资源库{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-24 lg:py-32">
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\"30\" height=\"30\" viewBox=\"0 0 30 30\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cpath d=\"M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z\" fill=\"rgba(255,255,255,0.07)\"%3E%3C/path%3E%3C/svg%3E')] opacity-40"></div>
+    <div class="relative max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight">
+                发现优质<span class="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">虚拟资源</span>
+            </h1>
+            <p class="text-lg md:text-xl text-slate-300 mb-10 leading-relaxed">
+                精选设计素材、开发工具、学习教程，一站式获取您需要的所有资源
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/articles" class="px-8 py-4 bg-white text-slate-900 font-semibold rounded-full hover:shadow-2xl hover:shadow-white/20 transition-all">
+                    浏览全部资源
+                </a>
+                <a href="/pricing" class="px-8 py-4 bg-white/10 text-white font-semibold rounded-full border border-white/20 hover:bg-white/20 transition-all">
+                    查看会员方案
+                </a>
+            </div>
+        </div>
+        <!-- Stats -->
+        <div class="mt-20 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
+            <div class="text-center">
+                <div class="text-3xl md:text-4xl font-bold text-white">1000+</div>
+                <div class="text-slate-400 text-sm mt-1">优质资源</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl md:text-4xl font-bold text-white">50K+</div>
+                <div class="text-slate-400 text-sm mt-1">用户下载</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl md:text-4xl font-bold text-white">99%</div>
+                <div class="text-slate-400 text-sm mt-1">好评率</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 搜索框（移动端） -->
+<div class="md:hidden px-6 -mt-6 relative z-10">
+    <form action="/search" method="get">
+        <div class="relative">
+            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input type="text" name="q" placeholder="搜索资源..." 
+                   class="w-full pl-12 pr-4 py-4 bg-white shadow-xl rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-500">
+        </div>
+    </form>
+</div>
+
+<div class="max-w-7xl mx-auto px-6 lg:px-8 py-16">
+    <!-- 分类导航 -->
+    {% if categories | length > 0 %}
+    <section class="mb-16">
+        <div class="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            <a href="/articles" class="flex-shrink-0 px-5 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-full hover:bg-slate-800 transition-colors">
+                全部
+            </a>
+            {% for cat in categories %}
+            <a href="/articles?category={{ cat.id }}" class="flex-shrink-0 px-5 py-2.5 bg-white text-slate-700 text-sm font-medium rounded-full border border-slate-200 hover:border-violet-300 hover:text-violet-600 transition-all">
+                {{ cat.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- 推荐资源 -->
+    {% if featured | length > 0 %}
+    <section class="mb-20">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900">精选推荐</h2>
+                <p class="text-slate-500 mt-1">编辑精心挑选的优质资源</p>
+            </div>
+            <a href="/articles" class="text-sm font-medium text-violet-600 hover:text-violet-700 flex items-center gap-1">
+                查看全部
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for article in featured %}
+            <a href="/article/{{ article.id }}" class="group bg-white rounded-2xl overflow-hidden border border-slate-200/60 card-hover">
+                <div class="aspect-video bg-gradient-to-br from-violet-500/10 to-purple-500/10 relative overflow-hidden">
+                    {% if article.cover_image %}
+                    <img src="{{ article.cover_image }}" alt="{{ article.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                    {% else %}
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="absolute top-3 right-3">
+                        <span class="px-2.5 py-1 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-xs font-semibold rounded-full">推荐</span>
+                    </div>
+                </div>
+                <div class="p-5">
+                    <h3 class="font-semibold text-slate-900 group-hover:text-violet-600 transition-colors line-clamp-2 mb-2">{{ article.title }}</h3>
+                    <p class="text-sm text-slate-500 line-clamp-2 mb-4">{{ article.content | truncate(length=80) }}</p>
+                    <div class="flex items-center justify-between text-xs text-slate-400">
+                        <span>{{ article.created_at | date(format="%Y-%m-%d") }}</span>
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            {{ article.view_count }}
+                        </span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- 最新资源 -->
+    <section class="mb-16">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900">最新上架</h2>
+                <p class="text-slate-500 mt-1">持续更新的新鲜资源</p>
+            </div>
+            <a href="/articles" class="text-sm font-medium text-violet-600 hover:text-violet-700 flex items-center gap-1">
+                查看全部
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+        {% if latest | length > 0 %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {% for article in latest %}
+            <a href="/article/{{ article.id }}" class="group bg-white rounded-xl overflow-hidden border border-slate-200/60 card-hover">
+                <div class="aspect-video overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+                    {% if article.cover_image %}
+                    <img src="{{ article.cover_image }}" alt="{{ article.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                    {% else %}
+                    <div class="w-full h-full flex items-center justify-center">
+                        <div class="w-12 h-12 bg-gradient-to-br from-violet-500/80 to-purple-600/80 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="p-4">
+                    <h3 class="font-semibold text-slate-900 group-hover:text-violet-600 transition-colors line-clamp-2 mb-2 text-sm">{{ article.title }}</h3>
+                    <div class="flex items-center justify-between text-xs text-slate-400">
+                        <span>{{ article.created_at | date(format="%m-%d") }}</span>
+                        <span>{{ article.view_count }} 浏览</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-16 bg-white rounded-2xl border border-slate-200/60">
+            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                </svg>
+            </div>
+            <p class="text-slate-500">暂无资源，敬请期待</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- 会员提示 -->
+    {% if not user or user.membership_type == "none" %}
+    <section class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 to-purple-600 p-10 lg:p-16">
+        <div class="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div class="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+        <div class="relative max-w-2xl">
+            <h2 class="text-3xl lg:text-4xl font-bold text-white mb-4">成为会员，解锁全部资源</h2>
+            <p class="text-violet-100 text-lg mb-8">购买会员后即可查看所有资源的下载链接，享受无限下载特权</p>
+            <a href="/pricing" class="inline-flex items-center gap-2 px-8 py-4 bg-white text-violet-600 font-semibold rounded-full hover:shadow-2xl hover:shadow-black/20 transition-all">
+                查看会员方案
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                </svg>
+            </a>
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

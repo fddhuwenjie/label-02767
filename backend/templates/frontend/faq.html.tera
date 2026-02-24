@@ -1,0 +1,211 @@
+{% extends "frontend/base" %}
+
+{% block title %}常见问题 - 资源库{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-6 lg:px-8 py-16">
+    <!-- 页面标题 -->
+    <div class="text-center mb-16">
+        <div class="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-violet-500/30">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </div>
+        <h1 class="text-3xl font-bold text-slate-900 mb-4">常见问题</h1>
+        <p class="text-lg text-slate-500">找到您关心的问题答案</p>
+    </div>
+
+    <!-- FAQ列表 -->
+    <div class="space-y-4">
+        <!-- 账号相关 -->
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
+                <h2 class="font-bold text-slate-900">账号相关</h2>
+            </div>
+            <div class="divide-y divide-slate-100">
+                <details class="group">
+                    <summary class="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <span class="font-medium text-slate-900">如何注册账号？</span>
+                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </summary>
+                    <div class="px-6 pb-4 text-slate-600">
+                        点击页面右上角的"注册"按钮，填写用户名（3-20个字符）、有效邮箱地址和密码（至少6个字符），即可完成注册。注册后请使用相同的用户名或邮箱登录。
+                    </div>
+                </details>
+                <details class="group">
+                    <summary class="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <span class="font-medium text-slate-900">忘记密码怎么办？</span>
+                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </summary>
+                    <div class="px-6 pb-4 text-slate-600">
+                        目前暂不支持自助找回密码，请通过"联系我们"页面联系客服，提供您的注册邮箱，我们会协助您重置密码。
+                    </div>
+                </details>
+                <details class="group">
+                    <summary class="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <span class="font-medium text-slate-900">为什么注册时提示邮箱无效？</span>
+                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </summary>
+                    <div class="px-6 pb-4 text-slate-600">
+                        系统会验证邮箱域名的MX记录，请确保使用真实有效的邮箱地址（如Gmail、QQ邮箱、163邮箱等）。临时邮箱或无效域名的邮箱无法通过验证。
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <!-- 会员相关 -->
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
+                <h2 class="font-bold text-slate-900">会员相关</h2>
+            </div>
+            <div class="divide-y divide-slate-100">
+                <details class="group">
+                    <summary class="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <span class="font-medium text-slate-900">会员有什么权益？</span>
+                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </summary>
+                    <div class="px-6 pb-4 text-slate-600">
+                        成为会员后，您可以查看所有资源的下载链接和提取密码，在会员有效期内无限次下载任意资源，并享受优先客服支持。
+                    </div>
+                </details>
+                <details class="group">
+                    <summary class="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <span class="font-medium text-slate-900">会员可以升级吗？</span>
+                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </summary>
+                    <div class="px-6 pb-4 text-slate-600">
+                        可以！您可以随时升级到更高级别的会员。升级后新会员立即生效，时长从升级时间开始计算。
+                    </div>
+                </details>
+                <details class="group">
+                    <summary class="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <span class="font-medium text-slate-900">会员到期后可以续费吗？</span>
+                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </summary>
+                    <div class="px-6 pb-4 text-slate-600">
+                        当然可以！续费同类型会员时，新的会员时长会自动累加到当前到期时间上。例如，您的年度会员还有30天到期，续费后将变成395天。
+                    </div>
+                </details>
+                <details class="group">
+                    <summary class="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <span class="font-medium text-slate-900">永久会员真的是永久的吗？</span>
+                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </summary>
+                    <div class="px-6 pb-4 text-slate-600">
+                        是的！永久会员一次购买，终身有效，无需续费。只要平台正常运营，您就可以永久享受会员权益。
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <!-- 下载相关 -->
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
+                <h2 class="font-bold text-slate-900">下载相关</h2>
+            </div>
+            <div class="divide-y divide-slate-100">
+                <details class="group">
+                    <summary class="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <span class="font-medium text-slate-900">如何下载资源？</span>
+                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </summary>
+                    <div class="px-6 pb-4 text-slate-600">
+                        成为会员后，在资源详情页底部会显示下载链接和提取密码。点击链接跳转到对应网盘（如百度网盘、阿里云盘等），输入提取密码即可保存或下载文件。
+                    </div>
+                </details>
+                <details class="group">
+                    <summary class="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <span class="font-medium text-slate-900">下载链接失效了怎么办？</span>
+                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </summary>
+                    <div class="px-6 pb-4 text-slate-600">
+                        如果发现下载链接失效，请通过"联系我们"页面反馈，我们会尽快更新链接。资源详情页也会标注链接是否有效。
+                    </div>
+                </details>
+                <details class="group">
+                    <summary class="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <span class="font-medium text-slate-900">下载速度慢怎么办？</span>
+                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </summary>
+                    <div class="px-6 pb-4 text-slate-600">
+                        下载速度取决于您使用的网盘平台。建议开通对应网盘的会员以获得更快的下载速度，或者尝试在网络较好的时段下载。
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <!-- 支付相关 -->
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
+                <h2 class="font-bold text-slate-900">支付相关</h2>
+            </div>
+            <div class="divide-y divide-slate-100">
+                <details class="group">
+                    <summary class="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <span class="font-medium text-slate-900">支持哪些支付方式？</span>
+                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </summary>
+                    <div class="px-6 pb-4 text-slate-600">
+                        目前支持支付宝和微信支付两种方式。选择会员套餐后，点击购买按钮，在弹出的支付窗口中选择您偏好的支付方式即可。
+                    </div>
+                </details>
+                <details class="group">
+                    <summary class="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <span class="font-medium text-slate-900">支付后会员没有生效怎么办？</span>
+                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </summary>
+                    <div class="px-6 pb-4 text-slate-600">
+                        正常情况下支付成功后会员会立即生效。如果遇到问题，请先刷新页面或重新登录。如果仍未生效，请联系客服并提供支付凭证，我们会尽快处理。
+                    </div>
+                </details>
+                <details class="group">
+                    <summary class="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <span class="font-medium text-slate-900">可以申请退款吗？</span>
+                        <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </summary>
+                    <div class="px-6 pb-4 text-slate-600">
+                        由于虚拟商品的特殊性，会员服务一经开通原则上不支持退款。如有特殊情况，请联系客服说明原因，我们会根据具体情况处理。
+                    </div>
+                </details>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部链接 -->
+    <div class="mt-12 text-center">
+        <p class="text-slate-500 mb-4">没有找到您的问题？</p>
+        <a href="/contact" class="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 text-white font-medium rounded-full hover:bg-violet-700 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            联系客服
+        </a>
+    </div>
+</div>
+{% endblock %}

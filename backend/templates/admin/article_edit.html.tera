@@ -1,0 +1,209 @@
+{% extends "admin/base" %}
+
+{% block title %}{% if is_new %}新建文章{% else %}编辑文章{% endif %} - 后台管理{% endblock %}
+{% block page_title %}{% if is_new %}新建文章{% else %}编辑文章{% endif %}{% endblock %}
+
+{% block head %}
+<style>
+.EasyMDEContainer .CodeMirror {
+    border-radius: 0.75rem;
+    border-color: #e5e7eb;
+}
+.EasyMDEContainer .editor-toolbar {
+    border-radius: 0.75rem 0.75rem 0 0;
+    border-color: #e5e7eb;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl">
+    <form id="article-form" class="space-y-6">
+        <!-- 基本信息 -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-100/50 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">基本信息</h3>
+            
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">文章标题 <span class="text-red-500">*</span></label>
+                    <input type="text" name="title" required value="{% if article %}{{ article.title }}{% endif %}"
+                           placeholder="请输入文章标题"
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent focus:bg-white transition-all">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">分类</label>
+                        <select name="category_id" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent focus:bg-white transition-all">
+                            <option value="">-- 选择分类 --</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if article and article.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">标签</label>
+                        <input type="text" name="tags" value="{% if tags %}{{ tags | join(sep=',') }}{% endif %}"
+                               placeholder="用逗号分隔多个标签"
+                               class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent focus:bg-white transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">文章内容 <span class="text-red-500">*</span></label>
+                    <textarea id="content-editor" name="content">{% if article %}{{ article.content }}{% endif %}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 资源信息 -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-100/50 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">资源信息</h3>
+            
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">封面图片URL</label>
+                    <input type="text" name="cover_image" value="{% if article %}{{ article.cover_image | default(value='') }}{% endif %}"
+                           placeholder="请输入封面图片URL（如 https://example.com/image.jpg）"
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent focus:bg-white transition-all">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">网盘平台</label>
+                        <select name="disk_platform_id" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent focus:bg-white transition-all">
+                            <option value="">-- 选择平台 --</option>
+                            {% for plat in platforms %}
+                            <option value="{{ plat.id }}" {% if article and article.disk_platform_id == plat.id %}selected{% endif %}>{{ plat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">提取密码</label>
+                        <input type="text" name="disk_password" value="{% if article %}{{ article.disk_password | default(value='') }}{% endif %}"
+                               placeholder="如：abc123"
+                               class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent focus:bg-white transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">网盘链接</label>
+                    <input type="text" name="disk_link" value="{% if article %}{{ article.disk_link | default(value='') }}{% endif %}"
+                           placeholder="请输入网盘分享链接"
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent focus:bg-white transition-all">
+                </div>
+            </div>
+        </div>
+
+        <!-- 发布设置 -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-100/50 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">发布设置</h3>
+            
+            <div class="flex flex-wrap gap-6">
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <div class="relative">
+                        <input type="checkbox" name="is_visible" {% if not article or article.is_visible %}checked{% endif %}
+                               class="peer sr-only">
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer-checked:bg-violet-600 transition-colors"></div>
+                        <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-5 transition-transform"></div>
+                    </div>
+                    <span class="text-gray-700 group-hover:text-gray-900">前台显示</span>
+                </label>
+
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <div class="relative">
+                        <input type="checkbox" name="is_featured" {% if article and article.is_featured %}checked{% endif %}
+                               class="peer sr-only">
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer-checked:bg-amber-500 transition-colors"></div>
+                        <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-5 transition-transform"></div>
+                    </div>
+                    <span class="text-gray-700 group-hover:text-gray-900">推荐置顶</span>
+                </label>
+
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <div class="relative">
+                        <input type="checkbox" name="is_link_valid" {% if not article or article.is_link_valid %}checked{% endif %}
+                               class="peer sr-only">
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer-checked:bg-emerald-500 transition-colors"></div>
+                        <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-5 transition-transform"></div>
+                    </div>
+                    <span class="text-gray-700 group-hover:text-gray-900">链接有效</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="flex items-center gap-4">
+            <button type="submit" class="px-8 py-3 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold rounded-xl hover:from-violet-600 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25">
+                {% if is_new %}发布文章{% else %}保存修改{% endif %}
+            </button>
+            <a href="/xuadmin/articles" class="px-8 py-3 text-gray-600 hover:text-gray-900 font-medium">取消</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const easyMDE = new EasyMDE({
+    element: document.getElementById('content-editor'),
+    spellChecker: false,
+    autosave: { enabled: false },
+    status: false,
+    minHeight: '300px',
+    placeholder: '请输入文章内容，支持 Markdown 格式...'
+});
+
+document.getElementById('article-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    
+    const tagsInput = form.tags.value.trim();
+    const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t) : [];
+
+    const data = {
+        title: form.title.value,
+        content: easyMDE.value(),
+        cover_image: form.cover_image.value || null,
+        category_id: form.category_id.value || null,
+        disk_platform_id: form.disk_platform_id.value || null,
+        disk_link: form.disk_link.value || null,
+        disk_password: form.disk_password.value || null,
+        is_visible: form.is_visible.checked,
+        is_featured: form.is_featured.checked,
+        is_link_valid: form.is_link_valid.checked,
+        tags: tags
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+
+    const isNew = {{ is_new | json_encode() | safe }};
+    const articleId = '{% if article %}{{ article.id }}{% endif %}';
+    const url = isNew ? '/xuadmin/articles' : `/xuadmin/articles/${articleId}`;
+    const method = isNew ? 'POST' : 'PUT';
+
+    try {
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+            window.location.href = '/xuadmin/articles';
+        } else {
+            alert(result.message);
+            submitBtn.disabled = false;
+            submitBtn.textContent = isNew ? '发布文章' : '保存修改';
+        }
+    } catch (err) {
+        alert('操作失败，请稍后重试');
+        submitBtn.disabled = false;
+        submitBtn.textContent = isNew ? '发布文章' : '保存修改';
+    }
+});
+</script>
+{% endblock %}

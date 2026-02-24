@@ -1,0 +1,184 @@
+{% extends "frontend/base" %}
+
+{% block title %}搜索{% if query %} "{{ query }}"{% endif %} - 虚拟资源平台{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- 搜索框 -->
+    <div class="max-w-2xl mx-auto mb-12">
+        <form action="/search" method="get" class="relative">
+            <div class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+            </div>
+            <input type="text" name="q" value="{{ query }}" placeholder="搜索资源..." 
+                   class="w-full pl-14 pr-6 py-5 bg-white border border-gray-200 rounded-2xl text-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent shadow-xl shadow-gray-200/50 transition-all"
+                   autofocus>
+            <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 px-6 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium rounded-xl hover:from-violet-600 hover:to-purple-700 transition-all">
+                搜索
+            </button>
+        </form>
+    </div>
+
+    {% if query %}
+    <!-- 搜索结果标题 -->
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">
+                搜索 "<span class="text-violet-600">{{ query }}</span>"
+            </h1>
+            <p class="text-gray-500 mt-1">共找到 {{ total }} 条相关资源</p>
+        </div>
+        {% if articles | length > 0 %}
+        <a href="/articles" class="text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1">
+            浏览全部
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
+        {% endif %}
+    </div>
+
+    {% if articles | length > 0 %}
+    <!-- 搜索结果列表 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for article in articles %}
+        <a href="/article/{{ article.id }}" class="group bg-white rounded-2xl border border-gray-100 hover:border-violet-200 shadow-lg shadow-gray-100/50 hover:shadow-xl hover:shadow-violet-100/50 transition-all duration-300 overflow-hidden">
+            <!-- 封面图 -->
+            <div class="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
+                {% if article.cover_image %}
+                <img src="{{ article.cover_image }}" alt="{{ article.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center">
+                    <div class="w-14 h-14 bg-gradient-to-br from-violet-500/80 to-purple-600/80 rounded-xl flex items-center justify-center">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="p-6">
+                <!-- 标签 -->
+                <div class="flex items-center gap-2 mb-3">
+                    {% if article.is_featured %}
+                    <span class="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-md">推荐</span>
+                    {% endif %}
+                    {% if article.category_name %}
+                    <span class="px-2 py-1 bg-violet-100 text-violet-700 text-xs font-medium rounded-md">{{ article.category_name }}</span>
+                    {% endif %}
+                </div>
+
+                <!-- 标题 -->
+                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-violet-600 transition-colors line-clamp-2 mb-3">
+                    {{ article.title }}
+                </h3>
+
+                <!-- 摘要 -->
+                <p class="text-gray-500 text-sm line-clamp-2 mb-4">
+                    {{ article.content | striptags | truncate(length=100) }}
+                </p>
+
+                <!-- 底部信息 -->
+                <div class="flex items-center justify-between text-sm text-gray-400 pt-4 border-t border-gray-100">
+                    <span class="flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        {{ article.created_at | date(format="%Y-%m-%d") }}
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        {{ article.view_count }}
+                    </span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- 分页 -->
+    {% if total_pages > 1 %}
+    <div class="mt-12 flex justify-center items-center gap-2">
+        {% if current_page > 1 %}
+        <a href="/search?q={{ query }}&page={{ current_page - 1 }}" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            上一页
+        </a>
+        {% endif %}
+        
+        <div class="flex items-center gap-1">
+            {% for p in range(start=1, end=total_pages + 1) %}
+                {% if p == current_page %}
+                <span class="w-10 h-10 flex items-center justify-center bg-violet-600 text-white font-medium rounded-xl">{{ p }}</span>
+                {% elif p == 1 or p == total_pages or (p >= current_page - 1 and p <= current_page + 1) %}
+                <a href="/search?q={{ query }}&page={{ p }}" class="w-10 h-10 flex items-center justify-center bg-white border border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50 transition-colors">{{ p }}</a>
+                {% elif p == current_page - 2 or p == current_page + 2 %}
+                <span class="w-10 h-10 flex items-center justify-center text-gray-400">...</span>
+                {% endif %}
+            {% endfor %}
+        </div>
+        
+        {% if current_page < total_pages %}
+        <a href="/search?q={{ query }}&page={{ current_page + 1 }}" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50 transition-colors">
+            下一页
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- 无结果 -->
+    <div class="text-center py-20">
+        <div class="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </div>
+        <h2 class="text-xl font-semibold text-gray-900 mb-2">未找到相关资源</h2>
+        <p class="text-gray-500 mb-8">换个关键词试试？</p>
+        <a href="/articles" class="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 text-white font-medium rounded-xl hover:bg-violet-700 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+            浏览全部资源
+        </a>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- 初始状态 -->
+    <div class="text-center py-16">
+        <div class="w-24 h-24 bg-gradient-to-br from-violet-100 to-purple-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <svg class="w-12 h-12 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+        </div>
+        <h2 class="text-xl font-semibold text-gray-900 mb-2">搜索您需要的资源</h2>
+        <p class="text-gray-500 mb-8">输入关键词，快速找到您想要的内容</p>
+        
+        <!-- 热门搜索 -->
+        <div class="max-w-md mx-auto">
+            <p class="text-sm text-gray-400 mb-3">热门搜索</p>
+            <div class="flex flex-wrap justify-center gap-2">
+                <a href="/search?q=教程" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-violet-100 hover:text-violet-600 transition-colors">教程</a>
+                <a href="/search?q=模板" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-violet-100 hover:text-violet-600 transition-colors">模板</a>
+                <a href="/search?q=素材" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-violet-100 hover:text-violet-600 transition-colors">素材</a>
+                <a href="/search?q=工具" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-violet-100 hover:text-violet-600 transition-colors">工具</a>
+                <a href="/search?q=源码" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-violet-100 hover:text-violet-600 transition-colors">源码</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
