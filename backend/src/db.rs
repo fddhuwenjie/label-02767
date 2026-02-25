@@ -3,9 +3,11 @@ use std::env;
 
 pub async fn init_pool() -> Result<MySqlPool, sqlx::Error> {
     let database_url = env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "mysql://root:password@db:3306/rocket_db".to_string());
+        .expect("DATABASE_URL environment variable must be set");
     
-    tracing::info!("连接数据库: {}", database_url.split('@').last().unwrap_or(""));
+    // 隐藏敏感信息，只显示主机部分
+    let display_url = database_url.split('@').last().unwrap_or("***");
+    tracing::info!("连接数据库: {}", display_url);
     
     let pool = MySqlPoolOptions::new()
         .max_connections(10)

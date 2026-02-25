@@ -52,7 +52,7 @@ impl<'r> FromRequest<'r> for CurrentUser {
     }
 }
 
-/// 管理员用户
+/// 管理员用户 - 统一返回404以隐藏后台存在
 pub struct AdminUser(pub User);
 
 #[rocket::async_trait]
@@ -66,9 +66,8 @@ impl<'r> FromRequest<'r> for AdminUser {
             Outcome::Success(CurrentUser(user)) if user.is_admin => {
                 Outcome::Success(AdminUser(user))
             }
-            Outcome::Success(_) => Outcome::Forward(Status::Forbidden),
-            Outcome::Forward(status) => Outcome::Forward(status),
-            Outcome::Error(e) => Outcome::Error(e),
+            // 统一返回404，不暴露后台存在
+            _ => Outcome::Forward(Status::NotFound),
         }
     }
 }

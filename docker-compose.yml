@@ -4,10 +4,10 @@ services:
     container_name: rocket-mariadb
     platform: linux/amd64
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: rocket_db
-      MYSQL_USER: rocket
-      MYSQL_PASSWORD: rocketpassword
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-rocket_db}
+      MYSQL_USER: ${DB_USER:-rocket}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-rocketpassword}
     volumes:
       - mariadb_data:/var/lib/mysql
     ports:
@@ -26,14 +26,15 @@ services:
       dockerfile: Dockerfile
     container_name: rocket-backend
     environment:
-      DATABASE_URL: mysql://rocket:rocketpassword@db:3306/rocket_db
-      SECRET_KEY: FHzyazF6WGNNhpzKc9odMH7N6OerouVwzOKDk7vEJBE=
-      ADMIN_USERNAME: admin
-      ADMIN_PASSWORD: admin123
-      RUST_LOG: info
+      DATABASE_URL: mysql://${DB_USER:-rocket}:${DB_PASSWORD:-rocketpassword}@db:3306/${DB_NAME:-rocket_db}
+      SECRET_KEY: ${SECRET_KEY:-ZuVdZ0uqaLYeICWBVMmm39yKiy63sE7HW9vpISsIT2w=}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      RUST_LOG: ${RUST_LOG:-info}
       ROCKET_ADDRESS: 0.0.0.0
       ROCKET_PORT: 8000
-      ROCKET_SECRET_KEY: FHzyazF6WGNNhpzKc9odMH7N6OerouVwzOKDk7vEJBE=
+      ROCKET_SECRET_KEY: ${ROCKET_SECRET_KEY:-ZuVdZ0uqaLYeICWBVMmm39yKiy63sE7HW9vpISsIT2w=}
+      ROCKET_ENV: ${ROCKET_ENV:-development}
     ports:
       - "8090:8000"
     depends_on:

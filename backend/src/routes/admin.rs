@@ -157,13 +157,18 @@ pub async fn admin_login(
     .execute(pool.inner())
     .await;
 
-    // 设置安全Cookie
-    let cookie = Cookie::build(("session_token", token))
+    // 设置安全Cookie - 生产环境应启用Secure
+    let is_production = std::env::var("ROCKET_ENV").unwrap_or_default() == "production";
+    let mut cookie_builder = Cookie::build(("session_token", token))
         .path("/")
         .http_only(true)
-        .same_site(rocket::http::SameSite::Lax);
+        .same_site(rocket::http::SameSite::Strict);
     
-    cookies.add_private(cookie);
+    if is_production {
+        cookie_builder = cookie_builder.secure(true);
+    }
+    
+    cookies.add_private(cookie_builder);
 
     tracing::info!("管理员登录成功: {} from {}", user.username, ip_str);
     Json(ApiResponse::success("/xuadmin/dashboard".to_string(), "登录成功"))

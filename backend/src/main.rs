@@ -9,6 +9,7 @@ mod routes;
 mod middleware;
 mod utils;
 
+use rocket::fs::FileServer;
 use rocket_dyn_templates::Template;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -39,6 +40,7 @@ async fn rocket() -> _ {
         .mount("/", routes::frontend::routes())
         .mount("/api", routes::api::routes())
         .mount("/xuadmin", routes::admin::routes())
+        .mount("/static", FileServer::from("static"))
         .register("/", catchers![not_found, internal_error])
 }
 

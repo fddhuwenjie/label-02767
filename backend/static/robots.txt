@@ -1,0 +1,19 @@
+User-agent: *
+Disallow: /xuadmin/
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+Disallow: /profile
+
+# 允许搜索引擎抓取公开内容
+Allow: /
+Allow: /articles
+Allow: /article/
+Allow: /search
+Allow: /pricing
+Allow: /help
+Allow: /faq
+Allow: /contact
+
+# Sitemap
+# Sitemap: https://your-domain.com/sitemap.xml

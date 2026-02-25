@@ -30,6 +30,7 @@ WORKDIR /app
 # 复制编译产物
 COPY --from=builder /app/target/release/rocket_project /app/
 COPY templates /app/templates
+COPY static /app/static
 COPY Rocket.toml /app/
 
 # 环境变量

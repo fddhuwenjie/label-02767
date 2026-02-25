@@ -24,6 +24,7 @@ pub fn routes() -> Vec<Route> {
         help_page,
         faq_page,
         contact_page,
+        robots_txt,
     ]
 }
 
@@ -218,27 +219,67 @@ pub async fn search(
     let offset = (page - 1) * per_page;
 
     let (articles, total): (Vec<Article>, i64) = if !query.is_empty() {
-        let search_term = format!("%{}%", query);
+        // 使用 FULLTEXT 全文搜索（BOOLEAN MODE 支持更灵活的搜索）
+        // 对于中文搜索，需要确保 MySQL/MariaDB 配置了 ngram 分词器
+        let search_query = query.split_whitespace()
+            .map(|w| format!("+{}*", w))
+            .collect::<Vec<_>>()
+            .join(" ");
         
         let articles: Vec<Article> = sqlx::query_as(
-            "SELECT * FROM articles WHERE is_visible = TRUE AND (title LIKE ? OR content LIKE ?) ORDER BY created_at DESC LIMIT ? OFFSET ?"
+            "SELECT * FROM articles WHERE is_visible = TRUE AND MATCH(title, content) AGAINST(? IN BOOLEAN MODE) ORDER BY MATCH(title, content) AGAINST(? IN BOOLEAN MODE) DESC, created_at DESC LIMIT ? OFFSET ?"
         )
-        .bind(&search_term)
-        .bind(&search_term)
+        .bind(&search_query)
+        .bind(&search_query)
         .bind(per_page)
         .bind(offset)
         .fetch_all(pool.inner())
         .await
-        .unwrap_or_default();
+        .unwrap_or_else(|_| {
+            // 如果 FULLTEXT 搜索失败（如搜索词太短），回退到 LIKE 搜索
+            Vec::new()
+        });
 
-        let (count,): (i64,) = sqlx::query_as(
-            "SELECT COUNT(*) FROM articles WHERE is_visible = TRUE AND (title LIKE ? OR content LIKE ?)"
+        // 如果 FULLTEXT 没有结果，尝试 LIKE 搜索作为回退
+        let articles = if articles.is_empty() {
+            let like_term = format!("%{}%", query);
+            sqlx::query_as(
+                "SELECT * FROM articles WHERE is_visible = TRUE AND (title LIKE ? OR content LIKE ?) ORDER BY created_at DESC LIMIT ? OFFSET ?"
+            )
+            .bind(&like_term)
+            .bind(&like_term)
+            .bind(per_page)
+            .bind(offset)
+            .fetch_all(pool.inner())
+            .await
+            .unwrap_or_default()
+        } else {
+            articles
+        };
+
+        // 计算总数
+        let count_result: Result<(i64,), _> = sqlx::query_as(
+            "SELECT COUNT(*) FROM articles WHERE is_visible = TRUE AND MATCH(title, content) AGAINST(? IN BOOLEAN MODE)"
         )
-        .bind(&search_term)
-        .bind(&search_term)
+        .bind(&search_query)
         .fetch_one(pool.inner())
-        .await
-        .unwrap_or((0,));
+        .await;
+
+        let count = match count_result {
+            Ok((c,)) if c > 0 => c,
+            _ => {
+                // 回退到 LIKE 计数
+                let like_term = format!("%{}%", query);
+                sqlx::query_as::<_, (i64,)>(
+                    "SELECT COUNT(*) FROM articles WHERE is_visible = TRUE AND (title LIKE ? OR content LIKE ?)"
+                )
+                .bind(&like_term)
+                .bind(&like_term)
+                .fetch_one(pool.inner())
+                .await
+                .unwrap_or((0,)).0
+            }
+        };
 
         (articles, count)
     } else {
@@ -334,9 +375,14 @@ pub async fn user_register(
         return Json(ApiResponse::error("用户名长度需要3-20个字符"));
     }
 
-    // 检查密码长度
-    if form.password.len() < 6 {
-        return Json(ApiResponse::error("密码长度至少6个字符"));
+    // 检查用户名格式（只允许字母、数字、下划线）
+    if !form.username.chars().all(|c| c.is_alphanumeric() || c == '_') {
+        return Json(ApiResponse::error("用户名只能包含字母、数字和下划线"));
+    }
+
+    // 检查密码强度
+    if let Err(e) = validate_password_strength(&form.password) {
+        return Json(ApiResponse::error(e));
     }
 
     // 检查IP注册限制
@@ -398,6 +444,44 @@ pub async fn user_register(
 
     tracing::info!("新用户注册: {} from {}", form.username, ip_str);
     Json(ApiResponse::success("/login".to_string(), "注册成功，请登录"))
+}
+
+/// 密码强度校验
+fn validate_password_strength(password: &str) -> Result<(), &'static str> {
+    if password.len() < 8 {
+        return Err("密码长度至少8个字符");
+    }
+    if password.len() > 128 {
+        return Err("密码长度不能超过128个字符");
+    }
+    
+    let has_lowercase = password.chars().any(|c| c.is_ascii_lowercase());
+    let has_uppercase = password.chars().any(|c| c.is_ascii_uppercase());
+    let has_digit = password.chars().any(|c| c.is_ascii_digit());
+    let has_special = password.chars().any(|c| !c.is_alphanumeric());
+    
+    let strength_count = [has_lowercase, has_uppercase, has_digit, has_special]
+        .iter()
+        .filter(|&&x| x)
+        .count();
+    
+    if strength_count < 2 {
+        return Err("密码需包含大小写字母、数字、特殊字符中的至少两种");
+    }
+    
+    // 检查常见弱密码
+    let weak_passwords = [
+        "password", "12345678", "123456789", "qwerty123", "admin123",
+        "letmein", "welcome", "monkey", "dragon", "master",
+    ];
+    let lower_password = password.to_lowercase();
+    for weak in weak_passwords {
+        if lower_password.contains(weak) {
+            return Err("密码过于简单，请使用更复杂的密码");
+        }
+    }
+    
+    Ok(())
 }
 
 #[get("/logout")]
@@ -480,4 +564,24 @@ pub async fn contact_page(user: OptionalUser) -> Template {
     Template::render("frontend/contact", context! {
         user: user.0,
     })
+}
+
+#[get("/robots.txt")]
+pub async fn robots_txt() -> &'static str {
+    r#"User-agent: *
+Disallow: /xuadmin/
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+Disallow: /profile
+
+Allow: /
+Allow: /articles
+Allow: /article/
+Allow: /search
+Allow: /pricing
+Allow: /help
+Allow: /faq
+Allow: /contact
+"#
 }

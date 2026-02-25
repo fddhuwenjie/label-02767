@@ -4,7 +4,15 @@
 
 ## 快速开始
 
+### 开发环境
+
 ```bash
+# 复制环境变量配置
+cp .env.example .env
+
+# 编辑 .env 文件，设置安全的密码和密钥
+vim .env
+
 # 启动服务
 docker-compose up --build -d
 
@@ -16,6 +24,24 @@ docker-compose down
 
 # 完全重置（清除数据库）
 docker-compose down -v
+```
+
+### 生产环境部署
+
+```bash
+# 1. 复制并配置环境变量
+cp .env.example .env
+
+# 2. 生成安全密钥
+openssl rand -base64 32  # 用于 SECRET_KEY 和 ROCKET_SECRET_KEY
+
+# 3. 编辑 .env 设置生产配置
+# - 设置强密码
+# - 设置 ROCKET_ENV=production
+# - 配置真实的数据库密码
+
+# 4. 启动服务
+docker-compose up -d
 ```
 
 ## 服务端口
@@ -34,6 +60,8 @@ docker-compose down -v
 - 用户名: `admin`
 - 密码: `admin123`
 
+> ⚠️ **生产环境请务必修改默认密码！**
+
 ### 测试用户账号
 | 用户名 | 密码 | 会员类型 |
 |--------|------|----------|
@@ -41,6 +69,63 @@ docker-compose down -v
 | lisi | 123456 | 季度会员 |
 | wangwu | 123456 | 年度会员 |
 | testuser | 123456 | 普通用户 |
+
+---
+
+## 安全配置
+
+### 环境变量配置
+
+所有敏感配置通过环境变量管理，参考 `.env.example`：
+
+```env
+# 数据库配置
+DB_ROOT_PASSWORD=your_secure_root_password
+DB_PASSWORD=your_secure_db_password
+
+# 应用密钥 - 生产环境必须更改
+SECRET_KEY=your_secure_secret_key
+ROCKET_SECRET_KEY=your_secure_rocket_secret_key
+
+# 运行环境
+ROCKET_ENV=production  # 生产环境启用 Secure Cookie
+```
+
+### 安全特性
+
+1. **后台隐蔽设计**
+   - 管理后台路径 `/xuadmin` 不在前台暴露
+   - 未授权访问统一返回 404，不暴露后台存在
+   - `robots.txt` 禁止搜索引擎抓取后台路径
+
+2. **登录防护**
+   - IP维度：15分钟内失败5次锁定
+   - 账户维度：15分钟内失败3次锁定
+   - 登录尝试日志记录
+
+3. **密码安全**
+   - bcrypt 加密存储
+   - 密码强度校验：至少8位，需包含大小写字母/数字/特殊字符中的两种
+   - 弱密码检测（常见密码黑名单）
+
+4. **Cookie 安全**
+   - HttpOnly：防止 XSS 窃取
+   - SameSite=Strict：防止 CSRF
+   - Secure：生产环境启用（需 HTTPS）
+
+5. **注册限制**
+   - 单 IP 最多注册 5 个账号
+   - 邮箱 MX 记录验证
+
+### 生产环境检查清单
+
+- [ ] 修改默认管理员密码
+- [ ] 设置强数据库密码
+- [ ] 生成新的 SECRET_KEY 和 ROCKET_SECRET_KEY
+- [ ] 设置 ROCKET_ENV=production
+- [ ] 配置 HTTPS（Nginx/Caddy 反向代理）
+- [ ] 配置防火墙，仅开放必要端口
+- [ ] 定期备份数据库
 
 ---
 
@@ -208,8 +293,8 @@ async function payOrder(method) {
 - 网盘平台管理
 
 ### 前台功能
-- 资源浏览和搜索（带封面图片展示）
-- 用户注册（邮箱MX验证、IP限制5个账号）
+- 资源浏览和搜索（全文搜索、带封面图片展示）
+- 用户注册（邮箱MX验证、IP限制5个账号、密码强度校验）
 - 用户登录
 - 会员购买/升级/续费
 - 个人中心（订单记录）
@@ -218,14 +303,14 @@ async function payOrder(method) {
 ### 技术栈
 - 后端：Rust + Rocket 0.5.1
 - 模板：Tera
-- 数据库：MariaDB
+- 数据库：MariaDB（FULLTEXT 全文索引）
 - 编辑器：EasyMDE (Markdown)
 - 样式：TailwindCSS
 - 容器：Docker + Docker Compose
 
 ### 数据表设计
 - `users` - 用户表（UUID主键）
-- `articles` - 文章表（含封面图片）
+- `articles` - 文章表（含封面图片、FULLTEXT索引）
 - `categories` - 分类表
 - `tags` - 标签表
 - `article_tags` - 文章标签关联表
@@ -234,19 +319,7 @@ async function payOrder(method) {
 - `pricing` - 定价表
 - `sessions` - 会话表
 - `ip_register_limits` - IP注册限制表
-
-### 安全特性
-- 管理后台路径 `/xuadmin` 隐蔽设计
-- 管理员登录页面无注册入口
-- 密码使用 bcrypt 加密
-- 会话 token 安全存储
-- IP 注册限制防止批量注册
-- 邮箱 MX 记录验证
-- 登录防暴破保护：
-  - IP维度：15分钟内失败5次锁定
-  - 账户维度：15分钟内失败3次锁定
-  - 登录尝试日志记录
-- Cookie安全设置（HttpOnly、SameSite）
+- `login_attempts` - 登录尝试记录表
 
 ---
 
@@ -270,10 +343,13 @@ async function payOrder(method) {
 │   ├── templates/
 │   │   ├── admin/           # 后台模板
 │   │   └── frontend/        # 前台模板
+│   ├── static/
+│   │   └── robots.txt       # 搜索引擎爬虫规则
 │   ├── Cargo.toml
 │   ├── Dockerfile
 │   └── Rocket.toml
 ├── docker-compose.yml
+├── .env.example             # 环境变量示例
 └── README.md
 ```
 
