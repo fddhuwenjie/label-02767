@@ -405,30 +405,68 @@ async fn init_default_data(pool: &MySqlPool) -> Result<(), sqlx::Error> {
     
     if user_count.0 == 0 {
         let test_users = [
-            ("zhangsan", "zhangsan@example.com", "monthly"),
-            ("lisi", "lisi@example.com", "quarterly"),
-            ("wangwu", "wangwu@example.com", "yearly"),
-            ("testuser", "test@example.com", "none"),
+            ("zhangsan", "zhangsan@example.com", "monthly", 30),
+            ("lisi", "lisi@example.com", "quarterly", 90),
+            ("wangwu", "wangwu@example.com", "yearly", 365),
+            ("testuser", "test@example.com", "none", 0),
         ];
         
         let password_hash = bcrypt::hash("123456", bcrypt::DEFAULT_COST).unwrap();
         
-        for (username, email, membership) in test_users {
+        for (username, email, membership, days) in test_users {
             let id = uuid::Uuid::new_v4().to_string();
+            if days > 0 {
+                // 有会员的用户设置过期时间
+                sqlx::query(r#"
+                    INSERT INTO users (id, username, email, password_hash, membership_type, membership_expires_at, points)
+                    VALUES (?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? DAY), ?)
+                "#)
+                .bind(&id)
+                .bind(username)
+                .bind(email)
+                .bind(&password_hash)
+                .bind(membership)
+                .bind(days)
+                .bind(100)
+                .execute(pool)
+                .await?;
+            } else {
+                // 普通用户
+                sqlx::query(r#"
+                    INSERT INTO users (id, username, email, password_hash, membership_type, points)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                "#)
+                .bind(&id)
+                .bind(username)
+                .bind(email)
+                .bind(&password_hash)
+                .bind(membership)
+                .bind(100)
+                .execute(pool)
+                .await?;
+            }
+        }
+        tracing::info!("创建测试用户数据");
+    } else {
+        // 迁移：为已有的测试用户更新过期时间
+        let updates = [
+            ("zhangsan", "monthly", 30),
+            ("lisi", "quarterly", 90),
+            ("wangwu", "yearly", 365),
+        ];
+        
+        for (username, membership, days) in updates {
             sqlx::query(r#"
-                INSERT INTO users (id, username, email, password_hash, membership_type, points)
-                VALUES (?, ?, ?, ?, ?, ?)
+                UPDATE users SET membership_expires_at = DATE_ADD(NOW(), INTERVAL ? DAY)
+                WHERE username = ? AND membership_type = ? AND (membership_expires_at IS NULL OR membership_expires_at < NOW())
             "#)
-            .bind(&id)
+            .bind(days)
             .bind(username)
-            .bind(email)
-            .bind(&password_hash)
             .bind(membership)
-            .bind(100)
             .execute(pool)
             .await?;
         }
-        tracing::info!("创建测试用户数据");
+        tracing::info!("迁移测试用户会员过期时间");
     }
 
     Ok(())
