@@ -34,12 +34,16 @@ async fn rocket() -> _ {
     // 运行数据库迁移
     db::run_migrations(&pool).await.expect("数据库迁移失败");
 
+    // 获取后台管理路径配置，默认为xuadmin
+    let admin_path = std::env::var("ADMIN_PATH").unwrap_or_else(|_| "xuadmin".to_string());
+    tracing::info!("后台管理路径: /{}", admin_path);
+
     rocket::build()
         .manage(pool)
         .attach(Template::fairing())
         .mount("/", routes::frontend::routes())
         .mount("/api", routes::api::routes())
-        .mount("/xuadmin", routes::admin::routes())
+        .mount(&format!("/{}", admin_path), routes::admin::routes())
         .mount("/static", FileServer::from("static"))
         .register("/", catchers![not_found, internal_error])
 }
