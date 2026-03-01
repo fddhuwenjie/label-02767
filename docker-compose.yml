@@ -20,12 +20,13 @@ services:
       start_period: 30s
     restart: unless-stopped
 
-  backend:
+  frontend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: rocket-backend
+    container_name: rocket-frontend
     environment:
+      APP_MODE: frontend
       DATABASE_URL: mysql://${DB_USER:-rocket}:${DB_PASSWORD:-rocketpassword}@db:3306/${DB_NAME:-rocket_db}
       SECRET_KEY: ${SECRET_KEY:-ZuVdZ0uqaLYeICWBVMmm39yKiy63sE7HW9vpISsIT2w=}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
@@ -37,6 +38,30 @@ services:
       ROCKET_ENV: ${ROCKET_ENV:-development}
     ports:
       - "8090:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rocket-admin
+    environment:
+      APP_MODE: admin
+      DATABASE_URL: mysql://${DB_USER:-rocket}:${DB_PASSWORD:-rocketpassword}@db:3306/${DB_NAME:-rocket_db}
+      SECRET_KEY: ${SECRET_KEY:-ZuVdZ0uqaLYeICWBVMmm39yKiy63sE7HW9vpISsIT2w=}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ADMIN_PATH: ${ADMIN_PATH:-xuadmin}
+      RUST_LOG: ${RUST_LOG:-info}
+      ROCKET_ADDRESS: 0.0.0.0
+      ROCKET_PORT: 8000
+      ROCKET_SECRET_KEY: ${ROCKET_SECRET_KEY:-ZuVdZ0uqaLYeICWBVMmm39yKiy63sE7HW9vpISsIT2w=}
+      ROCKET_ENV: ${ROCKET_ENV:-development}
+    ports:
+      - "8093:8000"
     depends_on:
       db:
         condition: service_healthy

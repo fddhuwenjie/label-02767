@@ -48,11 +48,14 @@ docker compose up -d
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
-| Backend | 8090 | Rocket Web 应用 |
+| Frontend | 8090 | 用户端（前台） |
+| Admin | 8093 | 管理后台 |
 | MariaDB | 3310 | 数据库服务 |
 
 - 前台首页: http://localhost:8090/
-- 管理后台: http://localhost:8090/xuadmin/login
+- 管理后台: http://localhost:8093/xuadmin/login
+
+> 管理后台与用户端运行在不同端口，彼此隔离。生产环境建议通过防火墙仅对内网开放 8091 端口。
 
 ## 测试账号
 

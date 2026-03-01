@@ -24,10 +24,11 @@ async fn rocket() -> _ {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    tracing::info!("启动 Rocket 应用...");
-
     // 加载环境变量
     dotenvy::dotenv().ok();
+
+    let app_mode = std::env::var("APP_MODE").unwrap_or_else(|_| "all".to_string());
+    tracing::info!("启动 Rocket 应用... 模式: {}", app_mode);
 
     // 初始化数据库
     let pool = db::init_pool().await.expect("数据库连接失败");
@@ -35,18 +36,36 @@ async fn rocket() -> _ {
     // 运行数据库迁移
     db::run_migrations(&pool).await.expect("数据库迁移失败");
 
-    // 获取后台管理路径配置，默认为xuadmin
     let admin_path = std::env::var("ADMIN_PATH").unwrap_or_else(|_| "xuadmin".to_string());
-    tracing::info!("后台管理路径: /{}", admin_path);
 
-    rocket::build()
+    let mut app = rocket::build()
         .manage(pool)
         .attach(Template::fairing())
-        .mount("/", routes::frontend::routes())
-        .mount("/api", routes::api::routes())
-        .mount(&format!("/{}", admin_path), routes::admin::routes())
         .mount("/static", FileServer::from("static"))
-        .register("/", catchers![not_found, internal_error])
+        .register("/", catchers![not_found, internal_error]);
+
+    match app_mode.as_str() {
+        "frontend" => {
+            tracing::info!("仅加载前台路由");
+            app = app
+                .mount("/", routes::frontend::routes())
+                .mount("/api", routes::api::routes());
+        }
+        "admin" => {
+            tracing::info!("仅加载后台管理路由, 路径: /{}", admin_path);
+            app = app
+                .mount(&format!("/{}", admin_path), routes::admin::routes());
+        }
+        _ => {
+            tracing::info!("加载全部路由, 后台路径: /{}", admin_path);
+            app = app
+                .mount("/", routes::frontend::routes())
+                .mount("/api", routes::api::routes())
+                .mount(&format!("/{}", admin_path), routes::admin::routes());
+        }
+    }
+
+    app
 }
 
 #[catch(404)]

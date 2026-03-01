@@ -314,61 +314,61 @@ async fn init_default_data(pool: &MySqlPool) -> Result<(), sqlx::Error> {
                 "2024最新UI设计规范完整版 - 包含组件库和设计系统",
                 "## 资源介绍\n\n这是一套完整的UI设计规范，包含了最新的设计趋势和组件库。\n\n### 包含内容\n\n- 完整的设计系统文档\n- Figma组件库源文件\n- Sketch组件库源文件\n- 设计规范PDF文档\n- 配色方案和字体规范\n\n### 适用人群\n\n- UI/UX设计师\n- 产品经理\n- 前端开发工程师",
                 "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&h=600&fit=crop",
-                0, 0, "https://pan.baidu.com/s/1example1", "abc1", true, true, 156
+                0, 0, "https://pan.baidu.com/s/1dGHk7Rj3XpLm9Nq2Wv5Bt", "abc1", true, true, 156
             ),
             (
                 "Python全栈开发实战教程 - 从入门到精通",
                 "## 课程简介\n\n本教程涵盖Python全栈开发的所有核心知识点，从基础语法到高级应用。\n\n### 课程大纲\n\n1. Python基础语法\n2. 面向对象编程\n3. Web开发框架Django/Flask\n4. 数据库操作\n5. RESTful API设计",
                 "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800&h=600&fit=crop",
-                1, 1, "https://pan.quark.cn/s/example2", "xyz2", true, true, 289
+                1, 1, "https://pan.quark.cn/s/8f3a7c2d1e9b", "xyz2", true, true, 289
             ),
             (
                 "商务PPT模板合集 - 500+精品模板",
                 "## 模板介绍\n\n精选500+商务PPT模板，涵盖各种场景和风格。\n\n### 模板分类\n\n- 工作汇报\n- 商业计划书\n- 产品发布\n- 年终总结",
                 "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=800&h=600&fit=crop",
-                2, 2, "https://www.aliyundrive.com/s/example3", "ppt3", true, false, 423
+                2, 2, "https://www.alipan.com/s/KxR5tVn3HqW", "ppt3", true, false, 423
             ),
             (
                 "4K高清纪录片合集 - BBC精选系列",
                 "## 资源介绍\n\n精选BBC出品的高质量纪录片，4K超清画质。\n\n### 包含系列\n\n- 地球脉动 Planet Earth\n- 蓝色星球 Blue Planet\n- 人类星球 Human Planet",
                 "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&h=600&fit=crop",
-                3, 3, "https://cloud.189.cn/t/example4", "bbc4", true, false, 567
+                3, 3, "https://cloud.189.cn/t/Vy2uIbBnYRfe", "bbc4", true, false, 567
             ),
             (
                 "计算机科学经典书籍合集 - PDF高清版",
                 "## 书籍列表\n\n精选计算机科学领域的经典著作，PDF高清扫描版。\n\n### 包含书籍\n\n- 《算法导论》第三版\n- 《深入理解计算机系统》\n- 《设计模式》",
                 "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=800&h=600&fit=crop",
-                4, 4, "https://www.123pan.com/s/example5", "book5", true, true, 892
+                4, 4, "https://www.123pan.com/s/Abc5VV-d8Ght", "book5", true, true, 892
             ),
             (
                 "Adobe全家桶2024破解版 - Win/Mac双版本",
                 "## 软件介绍\n\nAdobe Creative Cloud 2024全套软件，包含Win和Mac双版本。\n\n### 包含软件\n\n- Photoshop 2024\n- Illustrator 2024\n- Premiere Pro 2024",
                 "https://images.unsplash.com/photo-1626785774625-ddcddc3445e9?w=800&h=600&fit=crop",
-                5, 0, "https://pan.baidu.com/s/example6", "soft6", true, false, 1234
+                5, 0, "https://pan.baidu.com/s/1Qw4eR7tYu8iOp2Ls3Kj6H", "soft6", true, false, 1234
             ),
             (
                 "Figma高级技巧教程 - 提升设计效率",
                 "## 教程介绍\n\n深入学习Figma的高级功能和技巧，大幅提升设计效率。\n\n### 课程内容\n\n- Auto Layout高级用法\n- 组件变体设计\n- 设计系统搭建",
                 "https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=800&h=600&fit=crop",
-                1, 1, "https://pan.quark.cn/s/example7", "fig7", true, false, 345
+                1, 1, "https://pan.quark.cn/s/3b6e9a1f7d4c", "fig7", true, false, 345
             ),
             (
                 "React + TypeScript实战项目源码",
                 "## 项目介绍\n\n完整的React + TypeScript企业级项目源码，包含前后端。\n\n### 技术栈\n\n- React 18\n- TypeScript 5\n- Ant Design 5",
                 "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=600&fit=crop",
-                1, 2, "https://www.aliyundrive.com/s/example8", "react8", true, true, 678
+                1, 2, "https://www.alipan.com/s/Mn7pQr2XwYz", "react8", true, true, 678
             ),
             (
                 "摄影后期调色预设合集 - Lightroom/PS通用",
                 "## 预设介绍\n\n专业摄影师调色预设，适用于各种拍摄场景。\n\n### 预设分类\n\n- 人像美肤\n- 风景风光\n- 城市街拍",
                 "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=800&h=600&fit=crop",
-                0, 3, "https://cloud.189.cn/t/example9", "lr9", true, false, 456
+                0, 3, "https://cloud.189.cn/t/Zj8kNmFe3Rvq", "lr9", true, false, 456
             ),
             (
                 "Excel数据分析实战案例 - 含源文件",
                 "## 课程介绍\n\n通过真实案例学习Excel数据分析，提升职场竞争力。\n\n### 案例内容\n\n- 销售数据分析\n- 财务报表制作",
                 "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop",
-                2, 4, "https://www.123pan.com/s/example10", "excel10", true, false, 234
+                2, 4, "https://www.123pan.com/s/Xyz9WW-k3Lpq", "excel10", true, false, 234
             ),
         ];
 
