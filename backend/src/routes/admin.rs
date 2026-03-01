@@ -34,6 +34,9 @@ pub fn routes() -> Vec<Route> {
         admin_categories,
         admin_category_create,
         admin_category_delete,
+        admin_tags,
+        admin_tag_update,
+        admin_tag_delete,
     ]
 }
 
@@ -178,6 +181,7 @@ pub async fn admin_login(
 pub async fn admin_logout(
     pool: &State<MySqlPool>,
     cookies: &CookieJar<'_>,
+    _admin: AdminUser,
 ) -> Template {
     if let Some(cookie) = cookies.get_private("session_token") {
         let _ = sqlx::query("DELETE FROM sessions WHERE token = ?")
@@ -599,24 +603,88 @@ pub async fn admin_user_update(
     }
 }
 
+/// 后台创建用户请求
+#[derive(serde::Deserialize)]
+pub struct AdminUserCreateRequest {
+    pub username: String,
+    pub email: String,
+    pub password: String,
+    pub membership_type: Option<String>,
+    pub is_admin: Option<bool>,
+    pub points: Option<i32>,
+}
+
 #[post("/users", data = "<form>")]
 pub async fn admin_user_create(
     pool: &State<MySqlPool>,
     _admin: AdminUser,
-    form: Json<crate::models::RegisterRequest>,
+    form: Json<AdminUserCreateRequest>,
 ) -> Json<ApiResponse<String>> {
     let id = uuid::Uuid::new_v4().to_string();
     let password_hash = bcrypt::hash(&form.password, bcrypt::DEFAULT_COST).unwrap();
+    let membership_type = form.membership_type.clone().unwrap_or_else(|| "none".to_string());
+    let is_admin = form.is_admin.unwrap_or(false);
+    let points = form.points.unwrap_or(0);
 
-    let result = sqlx::query(
-        "INSERT INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)"
-    )
-    .bind(&id)
-    .bind(&form.username)
-    .bind(&form.email)
-    .bind(&password_hash)
-    .execute(pool.inner())
-    .await;
+    // 计算会员过期时间
+    let result = match membership_type.as_str() {
+        "monthly" => {
+            sqlx::query(
+                "INSERT INTO users (id, username, email, password_hash, membership_type, membership_expires_at, is_admin, points) VALUES (?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY), ?, ?)"
+            )
+            .bind(&id)
+            .bind(&form.username)
+            .bind(&form.email)
+            .bind(&password_hash)
+            .bind(&membership_type)
+            .bind(is_admin)
+            .bind(points)
+            .execute(pool.inner())
+            .await
+        }
+        "quarterly" => {
+            sqlx::query(
+                "INSERT INTO users (id, username, email, password_hash, membership_type, membership_expires_at, is_admin, points) VALUES (?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 90 DAY), ?, ?)"
+            )
+            .bind(&id)
+            .bind(&form.username)
+            .bind(&form.email)
+            .bind(&password_hash)
+            .bind(&membership_type)
+            .bind(is_admin)
+            .bind(points)
+            .execute(pool.inner())
+            .await
+        }
+        "yearly" => {
+            sqlx::query(
+                "INSERT INTO users (id, username, email, password_hash, membership_type, membership_expires_at, is_admin, points) VALUES (?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 365 DAY), ?, ?)"
+            )
+            .bind(&id)
+            .bind(&form.username)
+            .bind(&form.email)
+            .bind(&password_hash)
+            .bind(&membership_type)
+            .bind(is_admin)
+            .bind(points)
+            .execute(pool.inner())
+            .await
+        }
+        "permanent" | "none" | _ => {
+            sqlx::query(
+                "INSERT INTO users (id, username, email, password_hash, membership_type, is_admin, points) VALUES (?, ?, ?, ?, ?, ?, ?)"
+            )
+            .bind(&id)
+            .bind(&form.username)
+            .bind(&form.email)
+            .bind(&password_hash)
+            .bind(&membership_type)
+            .bind(is_admin)
+            .bind(points)
+            .execute(pool.inner())
+            .await
+        }
+    };
 
     match result {
         Ok(_) => Json(ApiResponse::success(id, "用户创建成功")),
@@ -874,6 +942,106 @@ pub async fn admin_category_delete(
     id: String,
 ) -> Json<ApiResponse<()>> {
     let result = sqlx::query("DELETE FROM categories WHERE id = ?")
+        .bind(&id)
+        .execute(pool.inner())
+        .await;
+
+    match result {
+        Ok(_) => Json(ApiResponse::success((), "删除成功")),
+        Err(_) => Json(ApiResponse::error("删除失败")),
+    }
+}
+
+#[get("/tags?<page>")]
+pub async fn admin_tags(
+    pool: &State<MySqlPool>,
+    admin: AdminUser,
+    page: Option<i32>,
+) -> Template {
+    let page = page.unwrap_or(1).max(1);
+    let per_page = 20;
+    let offset = (page - 1) * per_page;
+
+    #[derive(sqlx::FromRow, serde::Serialize)]
+    struct TagWithCount {
+        id: String,
+        name: String,
+        created_at: chrono::DateTime<chrono::Utc>,
+        article_count: i64,
+    }
+
+    let tags: Vec<TagWithCount> = sqlx::query_as(
+        "SELECT t.id, t.name, t.created_at, COUNT(at.article_id) as article_count FROM tags t LEFT JOIN article_tags at ON t.id = at.tag_id GROUP BY t.id, t.name, t.created_at ORDER BY article_count DESC, t.created_at DESC LIMIT ? OFFSET ?"
+    )
+    .bind(per_page)
+    .bind(offset)
+    .fetch_all(pool.inner())
+    .await
+    .unwrap_or_default();
+
+    let (total,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM tags")
+        .fetch_one(pool.inner()).await.unwrap_or((0,));
+
+    let total_pages = (total as f64 / per_page as f64).ceil() as i32;
+
+    Template::render("admin/tags", context! {
+        user: admin.0,
+        tags: tags,
+        current_page: page,
+        total_pages: total_pages,
+    })
+}
+
+#[derive(serde::Deserialize)]
+pub struct TagUpdateRequest {
+    pub name: String,
+}
+
+#[put("/tags/<id>", data = "<form>")]
+pub async fn admin_tag_update(
+    pool: &State<MySqlPool>,
+    _admin: AdminUser,
+    id: String,
+    form: Json<TagUpdateRequest>,
+) -> Json<ApiResponse<()>> {
+    let existing: Option<(String,)> = sqlx::query_as(
+        "SELECT id FROM tags WHERE name = ? AND id != ?"
+    )
+    .bind(&form.name)
+    .bind(&id)
+    .fetch_optional(pool.inner())
+    .await
+    .ok()
+    .flatten();
+
+    if existing.is_some() {
+        return Json(ApiResponse::error("标签名称已存在"));
+    }
+
+    let result = sqlx::query("UPDATE tags SET name = ? WHERE id = ?")
+        .bind(&form.name)
+        .bind(&id)
+        .execute(pool.inner())
+        .await;
+
+    match result {
+        Ok(_) => Json(ApiResponse::success((), "更新成功")),
+        Err(_) => Json(ApiResponse::error("更新失败")),
+    }
+}
+
+#[delete("/tags/<id>")]
+pub async fn admin_tag_delete(
+    pool: &State<MySqlPool>,
+    _admin: AdminUser,
+    id: String,
+) -> Json<ApiResponse<()>> {
+    let _ = sqlx::query("DELETE FROM article_tags WHERE tag_id = ?")
+        .bind(&id)
+        .execute(pool.inner())
+        .await;
+
+    let result = sqlx::query("DELETE FROM tags WHERE id = ?")
         .bind(&id)
         .execute(pool.inner())
         .await;

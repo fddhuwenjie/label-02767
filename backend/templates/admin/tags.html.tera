@@ -1,0 +1,164 @@
+{% extends "admin/base" %}
+
+{% block title %}标签管理 - 后台管理{% endblock %}
+{% block page_title %}标签管理{% endblock %}
+
+{% block content %}
+<!-- 顶部操作栏 -->
+<div class="flex items-center justify-between mb-6">
+    <p class="text-gray-500">管理文章标签，可修改标签名称或删除废弃标签</p>
+</div>
+
+<!-- 标签列表 -->
+<div class="bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-100/50 overflow-hidden">
+    {% if tags | length > 0 %}
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">标签名称</th>
+                    <th class="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">关联文章数</th>
+                    <th class="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
+                    <th class="text-right px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for tag in tags %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-violet-100 to-purple-100 rounded-xl flex items-center justify-center">
+                                <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+                                </svg>
+                            </div>
+                            <span class="font-medium text-gray-900">{{ tag.name }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 bg-violet-50 text-violet-700 text-sm font-medium rounded-lg">{{ tag.article_count }} 篇</span>
+                    </td>
+                    <td class="px-6 py-4 text-gray-500 text-sm">
+                        {{ tag.created_at | date(format="%Y-%m-%d") }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="editTag('{{ tag.id }}', '{{ tag.name }}')" class="p-2 text-gray-500 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors" title="编辑">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                            </button>
+                            <button onclick="deleteTag('{{ tag.id }}', '{{ tag.name }}')" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="删除">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if total_pages > 1 %}
+    <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+        <p class="text-sm text-gray-500">共 {{ total_pages }} 页</p>
+        <div class="flex items-center gap-2">
+            {% if current_page > 1 %}
+            <a href="/xuadmin/tags?page={{ current_page - 1 }}" class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">上一页</a>
+            {% endif %}
+            <span class="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg">{{ current_page }}</span>
+            {% if current_page < total_pages %}
+            <a href="/xuadmin/tags?page={{ current_page + 1 }}" class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">下一页</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="py-16 text-center">
+        <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+            </svg>
+        </div>
+        <p class="text-gray-500">暂无标签</p>
+        <p class="text-sm text-gray-400 mt-1">标签会在文章编辑时自动创建</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 编辑标签弹窗 -->
+<div id="edit-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900">编辑标签</h3>
+        </div>
+        <form id="edit-form" class="p-6 space-y-5">
+            <input type="hidden" id="edit-tag-id">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">标签名称</label>
+                <input type="text" id="edit-name" required
+                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:bg-white">
+            </div>
+            <div class="flex gap-3 pt-4">
+                <button type="submit" class="flex-1 py-3 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium rounded-xl hover:from-violet-600 hover:to-purple-700">保存</button>
+                <button type="button" onclick="closeEditModal()" class="flex-1 py-3 border border-gray-200 text-gray-600 font-medium rounded-xl hover:bg-gray-50">取消</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editTag(id, name) {
+    document.getElementById('edit-tag-id').value = id;
+    document.getElementById('edit-name').value = name;
+    document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').classList.add('hidden');
+}
+
+document.getElementById('edit-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('edit-tag-id').value;
+    const data = {
+        name: document.getElementById('edit-name').value.trim()
+    };
+
+    if (!data.name) {
+        showError('标签名称不能为空');
+        return;
+    }
+
+    try {
+        const res = await fetch(`/xuadmin/tags/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) window.location.reload();
+        else showError(result.message);
+    } catch (err) {
+        showError('更新失败');
+    }
+});
+
+async function deleteTag(id, name) {
+    showConfirm(`确定要删除标签"${name}"吗？删除后相关文章将取消该标签关联。`, async () => {
+        try {
+            const res = await fetch(`/xuadmin/tags/${id}`, { method: 'DELETE' });
+            const result = await res.json();
+            if (result.success) window.location.reload();
+            else showError(result.message);
+        } catch (err) {
+            showError('删除失败');
+        }
+    });
+}
+</script>
+{% endblock %}

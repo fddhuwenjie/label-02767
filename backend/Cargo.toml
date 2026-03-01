@@ -34,3 +34,10 @@ tokio = { version = "1", features = ["full"] }
 
 # 环境变量
 dotenvy = "0.15"
+
+# 支付网关 HTTP 客户端
+reqwest = { version = "0.11", features = ["json"] }
+
+# 签名
+hmac = "0.12"
+sha2 = "0.10"

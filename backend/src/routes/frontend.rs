@@ -352,8 +352,17 @@ pub async fn user_login(
     .execute(pool.inner())
     .await;
 
-    // 设置cookie
-    cookies.add_private(Cookie::build(("session_token", token)).path("/"));
+    let is_production = std::env::var("ROCKET_ENV").unwrap_or_default() == "production";
+    let mut cookie_builder = Cookie::build(("session_token", token))
+        .path("/")
+        .http_only(true)
+        .same_site(rocket::http::SameSite::Strict);
+
+    if is_production {
+        cookie_builder = cookie_builder.secure(true);
+    }
+
+    cookies.add_private(cookie_builder);
 
     tracing::info!("用户登录: {}", user.username);
     Json(ApiResponse::success("/".to_string(), "登录成功"))

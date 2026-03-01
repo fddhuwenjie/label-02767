@@ -14,16 +14,16 @@ cp .env.example .env
 vim .env
 
 # 启动服务
-docker-compose up --build -d
+docker compose up --build -d
 
 # 查看日志
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # 停止服务
-docker-compose down
+docker compose down
 
 # 完全重置（清除数据库）
-docker-compose down -v
+docker compose down -v
 ```
 
 ### 生产环境部署
@@ -41,7 +41,7 @@ openssl rand -base64 32  # 用于 SECRET_KEY 和 ROCKET_SECRET_KEY
 # - 配置真实的数据库密码
 
 # 4. 启动服务
-docker-compose up -d
+docker compose up -d
 ```
 
 ## 服务端口
@@ -129,15 +129,27 @@ ROCKET_ENV=production  # 生产环境启用 Secure Cookie
 
 ---
 
-## 支付系统说明
+## 支付系统
 
-### ⚠️ 当前状态：模拟支付
+### 支付流程
 
-当前系统的支付功能为**模拟演示模式**，用于开发测试和功能展示：
+系统集成了支付宝（PC网站支付）和微信支付（Native扫码支付）两种支付方式，完整支付流程如下：
 
-- 点击"支付宝支付"或"微信支付"后，系统会模拟1.5秒的支付处理时间
-- 支付完成后直接更新订单状态和用户会员信息
-- **不会产生真实的资金交易**
+1. 用户选择会员套餐，前端调用 `POST /api/orders` 创建订单
+2. 用户选择支付方式，前端调用 `POST /api/orders/pay` 发起支付
+3. 后端根据支付方式生成支付宝跳转URL或微信支付二维码
+4. 用户在支付宝/微信完成支付
+5. 支付平台通过异步回调通知后端 (`POST /api/payment/callback/alipay` 或 `/wechat`)
+6. 后端验证回调签名，确认支付成功后更新订单状态和用户会员
+7. 前端通过轮询 `GET /api/orders/<id>/status` 检测支付完成，展示成功页面
+
+### 支付安全
+
+- 回调接口验证支付平台签名，防止伪造通知
+- 订单金额在服务端从定价表计算，不信任前端传值
+- 使用 `status = 'pending'` 条件更新防止重复支付
+- 支付日志完整记录（tracing）
+- 生产环境通过 HTTPS 保护通信
 
 ### 会员升级/续费逻辑
 
@@ -146,137 +158,29 @@ ROCKET_ENV=production  # 生产环境启用 Secure Cookie
 3. **升级会员**：直接切换到新会员类型，时长从当前时间开始计算
 4. **永久会员**：一次购买，永久有效，无需续费
 
-### 接入真实支付的步骤
+### 配置支付参数
 
-要将模拟支付替换为真实支付网关，需要完成以下步骤：
-
-#### 1. 选择支付服务商
-
-| 支付方式 | 服务商 | 官方文档 |
-|----------|--------|----------|
-| 支付宝 | 蚂蚁金服开放平台 | https://open.alipay.com |
-| 微信支付 | 微信支付商户平台 | https://pay.weixin.qq.com |
-| 聚合支付 | Ping++、PayJS等 | 各平台官网 |
-
-#### 2. 申请商户资质
-
-- 企业营业执照
-- 对公银行账户
-- ICP备案域名
-- 完成平台审核
-
-#### 3. 修改后端代码
-
-在 `backend/src/routes/api.rs` 中修改 `pay_order` 函数：
-
-```rust
-#[post("/orders/pay", data = "<form>")]
-pub async fn pay_order(
-    pool: &State<MySqlPool>,
-    user: CurrentUser,
-    form: Json<PayOrderRequest>,
-) -> Json<ApiResponse<PaymentResponse>> {
-    // 1. 验证订单
-    let order = get_pending_order(&pool, &form.order_id, &user.0.id).await?;
-    
-    // 2. 调用支付网关创建支付订单
-    let payment = match form.payment_method.as_str() {
-        "alipay" => {
-            // 调用支付宝SDK
-            alipay::create_payment(&order).await?
-        }
-        "wechat" => {
-            // 调用微信支付SDK
-            wechat_pay::create_payment(&order).await?
-        }
-        _ => return Json(ApiResponse::error("不支持的支付方式")),
-    };
-    
-    // 3. 返回支付链接/二维码给前端
-    Json(ApiResponse::success(PaymentResponse {
-        payment_url: payment.url,
-        qr_code: payment.qr_code,
-    }, "请完成支付"))
-}
-
-// 4. 添加支付回调接口
-#[post("/orders/callback/<provider>", data = "<payload>")]
-pub async fn payment_callback(
-    pool: &State<MySqlPool>,
-    provider: &str,
-    payload: String,
-) -> &'static str {
-    // 验证签名
-    // 更新订单状态
-    // 更新用户会员
-    "success"
-}
-```
-
-#### 4. 添加支付SDK依赖
-
-在 `Cargo.toml` 中添加：
-
-```toml
-[dependencies]
-# 支付宝SDK（示例）
-alipay-sdk = "0.1"
-# 或使用HTTP客户端自行对接
-reqwest = { version = "0.11", features = ["json"] }
-```
-
-#### 5. 配置支付参数
-
-创建 `backend/.env` 或环境变量：
+在 `.env` 文件中配置支付网关凭据：
 
 ```env
 # 支付宝配置
 ALIPAY_APP_ID=your_app_id
-ALIPAY_PRIVATE_KEY=your_private_key
-ALIPAY_PUBLIC_KEY=alipay_public_key
-ALIPAY_NOTIFY_URL=https://yourdomain.com/api/orders/callback/alipay
+ALIPAY_PRIVATE_KEY=your_rsa2_private_key
+ALIPAY_PUBLIC_KEY=alipay_rsa2_public_key
+ALIPAY_NOTIFY_URL=https://yourdomain.com/api/payment/callback/alipay
+ALIPAY_RETURN_URL=https://yourdomain.com/api/payment/return
 
 # 微信支付配置
 WECHAT_APP_ID=your_app_id
 WECHAT_MCH_ID=your_mch_id
 WECHAT_API_KEY=your_api_key
-WECHAT_NOTIFY_URL=https://yourdomain.com/api/orders/callback/wechat
+WECHAT_NOTIFY_URL=https://yourdomain.com/api/payment/callback/wechat
+
+# 站点地址（用于自动生成回调URL）
+PAYMENT_BASE_URL=https://yourdomain.com
 ```
 
-#### 6. 前端对接
-
-修改 `backend/templates/frontend/pricing.html.tera` 中的 `payOrder` 函数：
-
-```javascript
-async function payOrder(method) {
-    const res = await fetch('/api/orders/pay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_id: orderId, payment_method: method })
-    });
-    const result = await res.json();
-    
-    if (result.success) {
-        if (method === 'alipay') {
-            // 跳转到支付宝支付页面
-            window.location.href = result.data.payment_url;
-        } else if (method === 'wechat') {
-            // 显示微信支付二维码
-            showQRCode(result.data.qr_code);
-            // 轮询查询支付状态
-            pollPaymentStatus(orderId);
-        }
-    }
-}
-```
-
-#### 7. 安全注意事项
-
-- ✅ 支付回调必须验证签名
-- ✅ 使用HTTPS保护通信
-- ✅ 订单金额在服务端计算，不信任前端传值
-- ✅ 防止重复支付和重复回调
-- ✅ 记录完整的支付日志
+> 当支付参数未配置时，系统会使用直接支付模式（支付后直接完成订单），适用于开发测试环境。配置支付参数后自动切换为对接真实支付网关
 
 ---
 
@@ -290,6 +194,7 @@ async function payOrder(method) {
 - 订单管理
 - 定价管理（月度/季度/年度/永久会员）
 - 分类管理
+- 标签管理（查看、重命名、删除）
 - 网盘平台管理
 
 ### 前台功能
