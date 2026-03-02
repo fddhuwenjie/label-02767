@@ -17,7 +17,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-4xl">
+<div class="w-full">
     <form id="article-form" class="space-y-6">
         <!-- 基本信息 -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-100/50 p-6">
@@ -62,10 +62,31 @@
             
             <div class="space-y-5">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">封面图片URL</label>
-                    <input type="text" name="cover_image" value="{% if article %}{{ article.cover_image | default(value='') }}{% endif %}"
-                           placeholder="请输入封面图片URL（如 https://example.com/image.jpg）"
-                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent focus:bg-white transition-all">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">封面图片</label>
+                    <div class="flex gap-4 items-start">
+                        <div class="flex-1 space-y-3">
+                            <input type="text" name="cover_image" id="cover-image-url" value="{% if article %}{{ article.cover_image | default(value='') }}{% endif %}"
+                                   placeholder="输入图片URL 或 点击右侧上传本地图片"
+                                   class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent focus:bg-white transition-all">
+                            <label class="inline-flex items-center gap-2 px-4 py-2.5 bg-violet-50 text-violet-600 rounded-xl cursor-pointer hover:bg-violet-100 transition-colors text-sm font-medium">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                上传本地图片
+                                <input type="file" id="cover-upload" accept="image/jpeg,image/png,image/gif,image/svg+xml" class="hidden">
+                            </label>
+                            <span id="upload-status" class="text-xs text-gray-400 hidden"></span>
+                        </div>
+                        <div id="cover-preview" class="w-32 h-20 rounded-xl border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center flex-shrink-0 {% if article and article.cover_image %}{% else %}hidden{% endif %}">
+                            {% if article and article.cover_image %}
+                            <img src="{{ article.cover_image }}" class="w-full h-full object-cover" alt="封面预览">
+                            {% else %}
+                            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -152,6 +173,53 @@ const easyMDE = new EasyMDE({
     status: false,
     minHeight: '300px',
     placeholder: '请输入文章内容，支持 Markdown 格式...'
+});
+
+// Cover image upload
+document.getElementById('cover-upload').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const status = document.getElementById('upload-status');
+    status.textContent = '上传中...';
+    status.classList.remove('hidden');
+
+    try {
+        const res = await fetch('/xuadmin/upload/image', {
+            method: 'POST',
+            headers: { 'Content-Type': file.type },
+            body: file
+        });
+        const result = await res.json();
+        if (result.success) {
+            document.getElementById('cover-image-url').value = result.data;
+            const preview = document.getElementById('cover-preview');
+            preview.innerHTML = `<img src="${result.data}" class="w-full h-full object-cover" alt="封面预览">`;
+            preview.classList.remove('hidden');
+            status.textContent = '上传成功';
+            status.classList.remove('text-gray-400');
+            status.classList.add('text-emerald-500');
+        } else {
+            status.textContent = result.message || '上传失败';
+            status.classList.remove('text-gray-400');
+            status.classList.add('text-red-500');
+        }
+    } catch (err) {
+        status.textContent = '上传失败，请重试';
+        status.classList.remove('text-gray-400');
+        status.classList.add('text-red-500');
+    }
+});
+
+// Cover image URL preview on blur
+document.getElementById('cover-image-url').addEventListener('blur', function() {
+    const url = this.value.trim();
+    const preview = document.getElementById('cover-preview');
+    if (url) {
+        preview.innerHTML = `<img src="${url}" class="w-full h-full object-cover" alt="封面预览" onerror="this.parentElement.classList.add('hidden')">`;
+        preview.classList.remove('hidden');
+    } else {
+        preview.classList.add('hidden');
+    }
 });
 
 document.getElementById('article-form').addEventListener('submit', async (e) => {
