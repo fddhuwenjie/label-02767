@@ -9,6 +9,7 @@ mod routes;
 mod middleware;
 mod utils;
 mod payment;
+mod services;
 
 use rocket::fs::FileServer;
 use rocket_dyn_templates::Template;
