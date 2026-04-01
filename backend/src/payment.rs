@@ -1,7 +1,8 @@
-use hmac::Hmac;
+use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use std::collections::BTreeMap;
 use std::env;
+use chrono::{Utc, DateTime, TimeZone};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -263,6 +264,57 @@ pub fn parse_xml_to_map(xml: &str) -> BTreeMap<String, String> {
         }
     }
     map
+}
+
+pub fn verify_callback_signature(params: &BTreeMap<String, String>, secret: &str) -> bool {
+    let signature = match params.get("signature") {
+        Some(s) => s.clone(),
+        None => return false,
+    };
+
+    let mut verify_params = params.clone();
+    verify_params.remove("signature");
+
+    let sign_str: String = verify_params
+        .iter()
+        .map(|(k, v)| format!("{}={}", k, v))
+        .collect::<Vec<_>>()
+        .join("&");
+
+    let mut mac = HmacSha256::new_from_slice(secret.as_bytes())
+        .expect("HMAC key error");
+    mac.update(sign_str.as_bytes());
+    let result = mac.finalize();
+    let expected = hex_encode(&result.into_bytes());
+
+    expected == signature.to_lowercase()
+}
+
+pub fn verify_callback_timestamp(params: &BTreeMap<String, String>) -> bool {
+    let timestamp_str = match params.get("timestamp") {
+        Some(t) => t,
+        None => return false,
+    };
+
+    let timestamp = match timestamp_str.parse::<i64>() {
+        Ok(t) => t,
+        Err(_) => return false,
+    };
+
+    let request_time = match Utc.timestamp_millis_opt(timestamp) {
+        chrono::LocalResult::Single(t) => t,
+        _ => return false,
+    };
+
+    let now = Utc::now();
+    let diff = now - request_time;
+
+    diff.num_minutes() <= 5
+}
+
+pub fn get_payment_secret() -> String {
+    env::var("PAYMENT_SECRET")
+        .unwrap_or_else(|_| "default_payment_secret_key_change_in_production".to_string())
 }
 
 mod urlencoding {
