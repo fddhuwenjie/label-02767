@@ -1,12 +1,14 @@
-use rocket::{Route, get, post, State};
+use rocket::{Route, get, post, State, http::Status};
 use rocket::serde::json::Json;
+use rocket::response::status;
 use sqlx::MySqlPool;
 use chrono::Utc;
 use std::collections::BTreeMap;
+use std::env;
 
 use crate::models::*;
 use crate::middleware::CurrentUser;
-use crate::payment::{self, PaymentConfig};
+use crate::payment::{self, PaymentConfig, CallbackVerificationError};
 
 pub fn routes() -> Vec<Route> {
     routes![
@@ -278,7 +280,7 @@ async fn update_user_membership(
 pub async fn payment_callback_alipay(
     pool: &State<MySqlPool>,
     body: String,
-) -> &'static str {
+) -> Result<&'static str, status::Custom<&'static str>> {
     tracing::info!("收到支付宝回调通知");
 
     let params: BTreeMap<String, String> = body
@@ -291,13 +293,49 @@ pub async fn payment_callback_alipay(
         })
         .collect();
 
+    let payment_secret = env::var("PAYMENT_SECRET").unwrap_or_default();
+
+    match payment::verify_callback_signature(&params, &payment_secret) {
+        Ok(_) => {}
+        Err(e) => {
+            let err_msg = match e {
+                CallbackVerificationError::SecretNotConfigured => "PAYMENT_SECRET 未配置",
+                CallbackVerificationError::SignatureMissing => "缺少 HMAC 签名参数",
+                CallbackVerificationError::SignatureInvalid => "HMAC 签名验证失败",
+                _ => "签名验证失败",
+            };
+            tracing::warn!(
+                "[ALERT] 支付宝回调安全验证失败: {} | params: {:?}",
+                err_msg,
+                params.keys().cloned().collect::<Vec<_>>()
+            );
+            return Err(status::Custom(Status::Forbidden, "fail"));
+        }
+    }
+
+    match payment::verify_callback_timestamp(&params, 300) {
+        Ok(_) => {}
+        Err(e) => {
+            let err_msg = match e {
+                CallbackVerificationError::TimestampMissing => "缺少时间戳参数",
+                CallbackVerificationError::TimestampInvalid => "时间戳格式无效",
+                CallbackVerificationError::RequestExpired => "请求已过期(超过5分钟)",
+                _ => "时间戳验证失败",
+            };
+            tracing::warn!(
+                "[ALERT] 支付宝回调时间戳验证失败: {} | params: {:?}",
+                err_msg,
+                params.keys().cloned().collect::<Vec<_>>()
+            );
+            return Err(status::Custom(Status::Forbidden, "fail"));
+        }
+    }
+
     let config = PaymentConfig::from_env();
 
-    if !config.alipay_public_key.is_empty() {
-        if !payment::verify_alipay_callback(&params, &config.alipay_public_key) {
-            tracing::warn!("支付宝回调签名验证失败");
-            return "fail";
-        }
+    if !payment::verify_alipay_callback(&params, &config.alipay_public_key) {
+        tracing::warn!("[ALERT] 支付宝官方签名验证失败: params={:?}", params.keys().cloned().collect::<Vec<_>>());
+        return Err(status::Custom(Status::Forbidden, "fail"));
     }
 
     let trade_status = params.get("trade_status").map(|s| s.as_str()).unwrap_or("");
@@ -305,19 +343,19 @@ pub async fn payment_callback_alipay(
         Some(id) => id,
         None => {
             tracing::warn!("支付宝回调缺少 out_trade_no");
-            return "fail";
+            return Ok("fail");
         }
     };
 
     if trade_status == "TRADE_SUCCESS" || trade_status == "TRADE_FINISHED" {
         if let Err(e) = complete_order_payment(pool, order_id, "alipay").await {
             tracing::error!("处理支付宝回调订单失败: {}", e);
-            return "fail";
+            return Ok("fail");
         }
         tracing::info!("支付宝回调处理成功: order={}", order_id);
     }
 
-    "success"
+    Ok("success")
 }
 
 /// 微信支付异步回调通知
@@ -325,17 +363,65 @@ pub async fn payment_callback_alipay(
 pub async fn payment_callback_wechat(
     pool: &State<MySqlPool>,
     body: String,
-) -> String {
+) -> Result<String, status::Custom<String>> {
     tracing::info!("收到微信支付回调通知");
 
     let params = payment::parse_xml_to_map(&body);
+    let payment_secret = env::var("PAYMENT_SECRET").unwrap_or_default();
+
+    match payment::verify_callback_signature(&params, &payment_secret) {
+        Ok(_) => {}
+        Err(e) => {
+            let err_msg = match e {
+                CallbackVerificationError::SecretNotConfigured => "PAYMENT_SECRET 未配置",
+                CallbackVerificationError::SignatureMissing => "缺少 HMAC 签名参数",
+                CallbackVerificationError::SignatureInvalid => "HMAC 签名验证失败",
+                _ => "签名验证失败",
+            };
+            tracing::warn!(
+                "[ALERT] 微信支付回调安全验证失败: {} | params: {:?}",
+                err_msg,
+                params.keys().cloned().collect::<Vec<_>>()
+            );
+            return Err(status::Custom(
+                Status::Forbidden,
+                "<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[签名验证失败]]></return_msg></xml>".to_string(),
+            ));
+        }
+    }
+
+    match payment::verify_callback_timestamp(&params, 300) {
+        Ok(_) => {}
+        Err(e) => {
+            let err_msg = match e {
+                CallbackVerificationError::TimestampMissing => "缺少时间戳参数",
+                CallbackVerificationError::TimestampInvalid => "时间戳格式无效",
+                CallbackVerificationError::RequestExpired => "请求已过期(超过5分钟)",
+                _ => "时间戳验证失败",
+            };
+            tracing::warn!(
+                "[ALERT] 微信支付回调时间戳验证失败: {} | params: {:?}",
+                err_msg,
+                params.keys().cloned().collect::<Vec<_>>()
+            );
+            return Err(status::Custom(
+                Status::Forbidden,
+                format!("<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[{}]]></return_msg></xml>", err_msg),
+            ));
+        }
+    }
+
     let config = PaymentConfig::from_env();
 
-    if !config.wechat_api_key.is_empty() {
-        if !payment::verify_wechat_callback(&params, &config.wechat_api_key) {
-            tracing::warn!("微信支付回调签名验证失败");
-            return "<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[签名失败]]></return_msg></xml>".to_string();
-        }
+    if !payment::verify_wechat_callback(&params, &config.wechat_api_key) {
+        tracing::warn!(
+            "[ALERT] 微信支付官方签名验证失败: params={:?}",
+            params.keys().cloned().collect::<Vec<_>>()
+        );
+        return Err(status::Custom(
+            Status::Forbidden,
+            "<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[签名失败]]></return_msg></xml>".to_string(),
+        ));
     }
 
     let result_code = params.get("result_code").map(|s| s.as_str()).unwrap_or("");
@@ -343,19 +429,19 @@ pub async fn payment_callback_wechat(
         Some(id) => id,
         None => {
             tracing::warn!("微信支付回调缺少 out_trade_no");
-            return "<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[缺少参数]]></return_msg></xml>".to_string();
+            return Ok("<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[缺少参数]]></return_msg></xml>".to_string());
         }
     };
 
     if result_code == "SUCCESS" {
         if let Err(e) = complete_order_payment(pool, order_id, "wechat").await {
             tracing::error!("处理微信支付回调订单失败: {}", e);
-            return "<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[处理失败]]></return_msg></xml>".to_string();
+            return Ok("<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[处理失败]]></return_msg></xml>".to_string());
         }
         tracing::info!("微信支付回调处理成功: order={}", order_id);
     }
 
-    "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>".to_string()
+    Ok("<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>".to_string())
 }
 
 async fn complete_order_payment(

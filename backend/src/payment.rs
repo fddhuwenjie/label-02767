@@ -265,6 +265,75 @@ pub fn parse_xml_to_map(xml: &str) -> BTreeMap<String, String> {
     map
 }
 
+pub enum CallbackVerificationError {
+    SecretNotConfigured,
+    SignatureMissing,
+    SignatureInvalid,
+    TimestampMissing,
+    TimestampInvalid,
+    RequestExpired,
+}
+
+pub fn verify_callback_signature(
+    params: &BTreeMap<String, String>,
+    secret: &str,
+) -> Result<(), CallbackVerificationError> {
+    use hmac::Mac;
+
+    if secret.is_empty() {
+        return Err(CallbackVerificationError::SecretNotConfigured);
+    }
+
+    let client_signature = params
+        .get("signature")
+        .or_else(|| params.get("sign_hmac"))
+        .ok_or(CallbackVerificationError::SignatureMissing)?;
+
+    let mut verify_params = params.clone();
+    verify_params.remove("signature");
+    verify_params.remove("sign_hmac");
+
+    let sign_str: String = verify_params
+        .iter()
+        .map(|(k, v)| format!("{}={}", k, v))
+        .collect::<Vec<_>>()
+        .join("&");
+
+    let mut mac = HmacSha256::new_from_slice(secret.as_bytes())
+        .expect("HMAC initialization failed");
+    mac.update(sign_str.as_bytes());
+    let expected = hex_encode(&mac.finalize().into_bytes());
+
+    if expected != client_signature.to_lowercase() {
+        return Err(CallbackVerificationError::SignatureInvalid);
+    }
+
+    Ok(())
+}
+
+pub fn verify_callback_timestamp(
+    params: &BTreeMap<String, String>,
+    max_age_seconds: i64,
+) -> Result<(), CallbackVerificationError> {
+    let timestamp_str = params
+        .get("timestamp")
+        .or_else(|| params.get("ts"))
+        .ok_or(CallbackVerificationError::TimestampMissing)?;
+
+    let timestamp = timestamp_str
+        .parse::<i64>()
+        .map_err(|_| CallbackVerificationError::TimestampInvalid)?;
+
+    let now = chrono::Utc::now().timestamp();
+    let diff = (now - timestamp).abs();
+
+    if diff > max_age_seconds {
+        return Err(CallbackVerificationError::RequestExpired);
+    }
+
+    Ok(())
+}
+
 mod urlencoding {
     pub fn encode(input: &str) -> String {
         let mut result = String::new();
