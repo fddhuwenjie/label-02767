@@ -2,6 +2,8 @@ use hmac::Hmac;
 use sha2::Sha256;
 use std::collections::BTreeMap;
 use std::env;
+use chrono::Utc;
+use hmac::Mac;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -18,6 +20,8 @@ pub struct PaymentConfig {
     pub wechat_mch_id: String,
     pub wechat_api_key: String,
     pub wechat_notify_url: String,
+    
+    pub payment_secret: String,
 }
 
 impl PaymentConfig {
@@ -41,6 +45,8 @@ impl PaymentConfig {
             wechat_api_key: env::var("WECHAT_API_KEY").unwrap_or_default(),
             wechat_notify_url: env::var("WECHAT_NOTIFY_URL")
                 .unwrap_or_else(|_| format!("{}/api/payment/callback/wechat", base_url)),
+            
+            payment_secret: env::var("PAYMENT_SECRET").unwrap_or_else(|_| "default_payment_secret".to_string()),
         }
     }
 
@@ -280,4 +286,56 @@ mod urlencoding {
         }
         result
     }
+}
+
+pub fn generate_hmac_sha256_signature(params: &BTreeMap<String, String>, secret: &str) -> String {
+    let sign_str: String = params
+        .iter()
+        .filter(|(k, _)| k != &"sign")
+        .map(|(k, v)| format!("{}={}", k, v))
+        .collect::<Vec<_>>()
+        .join("&");
+    
+    let mut mac = HmacSha256::new_from_slice(secret.as_bytes())
+        .expect("HMAC key error");
+    mac.update(sign_str.as_bytes());
+    let result = mac.finalize();
+    hex::encode(result.into_bytes())
+}
+
+pub fn verify_hmac_sha256_signature(params: &BTreeMap<String, String>, secret: &str) -> bool {
+    let received_sign = match params.get("sign") {
+        Some(s) => s,
+        None => return false,
+    };
+    
+    let expected_sign = generate_hmac_sha256_signature(params, secret);
+    expected_sign == received_sign
+}
+
+pub fn verify_timestamp(params: &BTreeMap<String, String>, max_age_seconds: i64) -> bool {
+    let timestamp_str = match params.get("timestamp") {
+        Some(t) => t,
+        None => return false,
+    };
+    
+    let timestamp = match timestamp_str.parse::<i64>() {
+        Ok(t) => t,
+        Err(_) => return false,
+    };
+    
+    let current_time = Utc::now().timestamp();
+    (current_time - timestamp).abs() <= max_age_seconds
+}
+
+pub fn verify_payment_callback(params: &BTreeMap<String, String>, secret: &str) -> Result<(), String> {
+    if !verify_timestamp(params, 300) {
+        return Err("回调请求已过期".to_string());
+    }
+    
+    if !verify_hmac_sha256_signature(params, secret) {
+        return Err("签名验证失败".to_string());
+    }
+    
+    Ok(())
 }
